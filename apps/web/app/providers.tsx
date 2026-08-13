@@ -8,6 +8,7 @@ import { ToastProvider } from "@coss/ui/components/toast";
 import { WebPushProvider } from "@calcom/web/modules/notifications/components/WebPushContext";
 import { NotificationSoundHandler } from "@calcom/web/components/notification-sound-handler";
 
+import { PendoInitializer } from "@components/PendoInitializer";
 import useIsBookingPage from "@lib/hooks/useIsBookingPage";
 
 import { GeoProvider } from "./GeoContext";
@@ -25,6 +26,7 @@ export function Providers({ isEmbed, children, country }: ProvidersProps) {
     <GeoProvider country={country}>
       <SessionProvider>
         <TrpcProvider>
+          <PendoInitializer />
           <ToastProvider position="bottom-center">
             {!isEmbed && !isBookingPage && <NotificationSoundHandler />}
             {/* @ts-expect-error FIXME remove this comment when upgrading typescript to v5 */}
