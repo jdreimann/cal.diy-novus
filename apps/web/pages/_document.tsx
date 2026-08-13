@@ -6,27 +6,37 @@ import Document, { Head, Html, Main, NextScript } from "next/document";
 
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 
-import { applyTheme, applyToDesktopClass } from "./../lib/pages/document/_applyThemeForDocument";
+import {
+  applyTheme,
+  applyToDesktopClass,
+} from "./../lib/pages/document/_applyThemeForDocument";
+import process from "node:process";
 
 type Props = Record<string, unknown> & DocumentProps & { newLocale: string };
 
 class MyDocument extends Document<Props> {
   static async getInitialProps(ctx: DocumentContext) {
-    const getLocaleModule = ctx.req ? await import("@calcom/features/auth/lib/getLocale") : null;
+    const getLocaleModule = ctx.req
+      ? await import("@calcom/features/auth/lib/getLocale")
+      : null;
 
     const newLocale =
       ctx.req && getLocaleModule
         ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await getLocaleModule.getLocale(ctx.req as IncomingMessage & { cookies: Record<string, any> })
+          await getLocaleModule.getLocale(
+            ctx.req as IncomingMessage & { cookies: Record<string, any> }
+          )
         : "en";
 
     const asPath = ctx.asPath || "";
     // Use a dummy URL as default so that URL parsing works for relative URLs as well. We care about searchParams and pathname only
     const parsedUrl = new URL(asPath, "https://dummyurl");
-    const isEmbedSnippetGeneratorPath = parsedUrl.pathname.startsWith("/event-types");
+    const isEmbedSnippetGeneratorPath =
+      parsedUrl.pathname.startsWith("/event-types");
     // FIXME: Revisit this logic to remove embedType query param check completely. Ideally, /embed should always be there at the end of the URL. Test properly and then remove it.
     const isEmbed =
-      (parsedUrl.pathname.endsWith("/embed") || parsedUrl.searchParams.get("embedType") !== null) &&
+      (parsedUrl.pathname.endsWith("/embed") ||
+        parsedUrl.searchParams.get("embedType") !== null) &&
       !isEmbedSnippetGeneratorPath;
     const embedColorScheme = parsedUrl.searchParams.get("ui.color-scheme");
     const initialProps = await Document.getInitialProps(ctx);
@@ -50,8 +60,28 @@ class MyDocument extends Document<Props> {
       <Html
         lang={newLocale}
         dir={newDir}
-        style={embedColorScheme ? { colorScheme: embedColorScheme as string } : undefined}>
+        style={
+          embedColorScheme
+            ? { colorScheme: embedColorScheme as string }
+            : undefined
+        }
+      >
         <Head>
+          <script
+            id="pendo-install"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: Pendo SDK install snippet
+            dangerouslySetInnerHTML={{
+              __html: `
+              (function(apiKey){
+                (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
+                v=['initialize','identify','updateOptions','pageLoad','track','trackAgent'];for(w=0,x=v.length;w<x;++w)(function(m){
+                o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);
+                y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo-dev.pendo-dev.com/agent/static/'+apiKey+'/pendo.js';
+                z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
+              })('11868d0d-5894-42f6-9b1f-79a12328484e');
+              `,
+            }}
+          />
           <script
             id="newLocale"
             // eslint-disable-next-line react/no-danger
@@ -65,14 +95,36 @@ class MyDocument extends Document<Props> {
             `,
             }}
           />
-          <link rel="apple-touch-icon" sizes="180x180" href="/api/logo?type=apple-touch-icon" />
-          <link rel="icon" type="image/png" sizes="32x32" href="/api/logo?type=favicon-32" />
-          <link rel="icon" type="image/png" sizes="16x16" href="/api/logo?type=favicon-16" />
+          <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/api/logo?type=apple-touch-icon"
+          />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/api/logo?type=favicon-32"
+          />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/api/logo?type=favicon-16"
+          />
           <link rel="manifest" href="/site.webmanifest" />
           <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
           <meta name="msapplication-TileColor" content="#ff0000" />
-          <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F9FAFC" />
-          <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1F1F1F" />
+          <meta
+            name="theme-color"
+            media="(prefers-color-scheme: light)"
+            content="#F9FAFC"
+          />
+          <meta
+            name="theme-color"
+            media="(prefers-color-scheme: dark)"
+            content="#1F1F1F"
+          />
           {!IS_PRODUCTION && process.env.VERCEL_ENV === "preview" && (
             // eslint-disable-next-line @next/next/no-sync-scripts
             <script
@@ -83,7 +135,7 @@ class MyDocument extends Document<Props> {
         </Head>
 
         <body
-          className="dark:bg-default bg-subtle antialiased"
+          className="bg-subtle antialiased dark:bg-default"
           style={
             isEmbed
               ? {
@@ -95,7 +147,8 @@ class MyDocument extends Document<Props> {
                   visibility: "hidden",
                 }
               : {}
-          }>
+          }
+        >
           <Main />
           <NextScript />
         </body>

@@ -22,11 +22,16 @@ export function Logout(props: PageProps) {
   if (status === "authenticated") signOut({ redirect: false });
   const router = useRouter();
   useEffect(() => {
+    if (typeof pendo !== "undefined") {
+      pendo.clearSession();
+    }
+  }, []);
+  useEffect(() => {
     if (props.query?.survey === "true") {
       router.push(`${WEBSITE_URL}/cancellation`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.query?.survey]);
+  }, [props.query?.survey, router.push]);
   const { t } = useLocale();
 
   const message = () => {
@@ -43,15 +48,18 @@ export function Logout(props: PageProps) {
   return (
     <AuthContainer showLogo>
       <div className="mb-4">
-        <div className="bg-cal-success mx-auto flex h-12 w-12 items-center justify-center rounded-full">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cal-success">
           <CheckIcon className="h-6 w-6 text-green-600" />
         </div>
         <div className="mt-3 text-center sm:mt-5">
-          <h3 className="text-emphasis text-lg font-medium leading-6" id="modal-title">
+          <h3
+            className="font-medium text-emphasis text-lg leading-6"
+            id="modal-title"
+          >
             {t("youve_been_logged_out")}
           </h3>
           <div className="mt-2">
-            <p className="text-subtle text-sm">{t(message())}</p>
+            <p className="text-sm text-subtle">{t(message())}</p>
           </div>
         </div>
       </div>
@@ -59,7 +67,8 @@ export function Logout(props: PageProps) {
         data-testid="logout-btn"
         onClick={navigateToLogin}
         className="flex w-full justify-center"
-        loading={btnLoading}>
+        loading={btnLoading}
+      >
         {t("go_back_login")}
       </Button>
     </AuthContainer>

@@ -13,8 +13,14 @@ import "../styles/globals.css";
 import { AppRouterI18nProvider } from "./AppRouterI18nProvider";
 import { Providers } from "./providers";
 import { SpeculationRules } from "./SpeculationRules";
+import process from "node:process";
 
-const interFont = Inter({ subsets: ["latin"], variable: "--font-sans", preload: true, display: "swap" });
+const interFont = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  preload: true,
+  display: "swap",
+});
 const calFont = localFont({
   src: "../fonts/CalSans-SemiBold.woff2",
   variable: "--font-cal",
@@ -82,7 +88,9 @@ const getInitialProps = async () => {
   const h = await headers();
   const isEmbed = h.get("x-isEmbed") === "true";
   const embedColorScheme = h.get("x-embedColorScheme");
-  const newLocale = (await getLocale(buildLegacyRequest(await headers(), await cookies()))) ?? "en";
+  const newLocale =
+    (await getLocale(buildLegacyRequest(await headers(), await cookies()))) ??
+    "en";
   const direction = dir(newLocale) ?? "ltr";
 
   return {
@@ -93,13 +101,19 @@ const getInitialProps = async () => {
   };
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const h = await headers();
   const nonce = h.get("x-csp-nonce") ?? "";
 
-  const country = h.get("cf-ipcountry") || h.get("x-vercel-ip-country") || "Unknown";
+  const country =
+    h.get("cf-ipcountry") || h.get("x-vercel-ip-country") || "Unknown";
 
-  const { locale, direction, isEmbed, embedColorScheme } = await getInitialProps();
+  const { locale, direction, isEmbed, embedColorScheme } =
+    await getInitialProps();
 
   const ns = "common";
   const translations = await loadTranslations(locale, ns);
@@ -110,14 +124,33 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       translate="no"
       lang={locale}
       dir={direction}
-      style={embedColorScheme ? { colorScheme: embedColorScheme as string } : undefined}
+      style={
+        embedColorScheme
+          ? { colorScheme: embedColorScheme as string }
+          : undefined
+      }
       suppressHydrationWarning
-      data-nextjs-router="app">
+      data-nextjs-router="app"
+    >
       <head nonce={nonce}>
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: Pendo SDK install snippet
+          dangerouslySetInnerHTML={{
+            __html: `
+            (function(apiKey){
+              (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
+              v=['initialize','identify','updateOptions','pageLoad','track','trackAgent'];for(w=0,x=v.length;w<x;++w)(function(m){
+              o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);
+              y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo-dev.pendo-dev.com/agent/static/'+apiKey+'/pendo.js';
+              z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
+            })('11868d0d-5894-42f6-9b1f-79a12328484e');
+            `,
+          }}
+        />
         <style>{`
           :root {
-            --font-sans: ${interFont.style.fontFamily.replace(/\'/g, "")};
-            --font-cal: ${calFont.style.fontFamily.replace(/\'/g, "")};
+            --font-sans: ${interFont.style.fontFamily.replace(/'/g, "")};
+            --font-cal: ${calFont.style.fontFamily.replace(/'/g, "")};
           }
         `}</style>
         {process.env.NODE_ENV === "development" && (
@@ -130,7 +163,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       </head>
       <body
-        className="dark:bg-default bg-subtle antialiased"
+        className="bg-subtle antialiased dark:bg-default"
         style={
           isEmbed
             ? {
@@ -147,7 +180,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 visibility: "visible",
                 opacity: 1,
               }
-        }>
+        }
+      >
         <IconSprites />
         <SpeculationRules
           // URLs In Navigation
@@ -161,7 +195,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
 
         <Providers isEmbed={isEmbed} nonce={nonce} country={country}>
-          <AppRouterI18nProvider translations={translations} locale={locale} ns={ns}>
+          <AppRouterI18nProvider
+            translations={translations}
+            locale={locale}
+            ns={ns}
+          >
             {children}
           </AppRouterI18nProvider>
         </Providers>
