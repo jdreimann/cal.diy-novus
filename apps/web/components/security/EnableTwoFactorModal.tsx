@@ -1,7 +1,3 @@
-import type { BaseSyntheticEvent } from "react";
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useCallbackRef } from "@calcom/lib/hooks/useCallbackRef";
@@ -9,9 +5,11 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent } from "@calcom/ui/components/dialog";
 import { Form } from "@calcom/ui/components/form";
-
 import TwoFactor from "@components/auth/TwoFactor";
-
+import type React from "react";
+import type { BaseSyntheticEvent } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import TwoFactorAuthAPI from "./TwoFactorAuthAPI";
 import TwoFactorModalHeader from "./TwoFactorModalHeader";
 
@@ -49,7 +47,10 @@ interface EnableTwoFactorValues {
   totpCode: string;
 }
 
-const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps) => {
+const EnableTwoFactorModal = ({
+  onEnable,
+  onCancel,
+}: EnableTwoFactorModalProps) => {
   const { t } = useLocale();
   const form = useForm<EnableTwoFactorValues>();
 
@@ -99,7 +100,10 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
     }
   }
 
-  async function handleEnable({ totpCode }: EnableTwoFactorValues, e: BaseSyntheticEvent | undefined) {
+  async function handleEnable(
+    { totpCode }: EnableTwoFactorValues,
+    e: BaseSyntheticEvent | undefined
+  ) {
     e?.preventDefault();
 
     if (isSubmitting) {
@@ -114,6 +118,9 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
       const body = await response.json();
 
       if (response.status === 200) {
+        if (typeof pendo !== "undefined") {
+          pendo.track("two_factor_enabled");
+        }
         onEnable();
         return;
       }
@@ -145,12 +152,18 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
   return (
     <Dialog open={true}>
       <DialogContent>
-        <TwoFactorModalHeader title={t("enable_2fa")} description={setupDescriptions[step]} />
+        <TwoFactorModalHeader
+          title={t("enable_2fa")}
+          description={setupDescriptions[step]}
+        />
 
         <WithStep step={SetupStep.ConfirmPassword} current={step}>
           <form onSubmit={handleSetup}>
             <div className="mb-4">
-              <label htmlFor="password" className="text-default mt-4 block text-sm font-medium">
+              <label
+                htmlFor="password"
+                className="text-default mt-4 block text-sm font-medium"
+              >
                 {t("password")}
               </label>
               <div className="mt-1">
@@ -165,7 +178,9 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
                 />
               </div>
 
-              {errorMessage && <p className="mt-1 text-sm text-red-700">{errorMessage}</p>}
+              {errorMessage && (
+                <p className="mt-1 text-sm text-red-700">{errorMessage}</p>
+              )}
             </div>
           </form>
         </WithStep>
@@ -185,7 +200,9 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
             <div className="mb-4">
               <TwoFactor center />
 
-              {errorMessage && <p className="mt-1 text-sm text-red-700">{errorMessage}</p>}
+              {errorMessage && (
+                <p className="mt-1 text-sm text-red-700">{errorMessage}</p>
+              )}
             </div>
           </WithStep>
 
@@ -195,17 +212,26 @@ const EnableTwoFactorModal = ({ onEnable, onCancel }: EnableTwoFactorModalProps)
                 type="submit"
                 className="me-2 ms-2"
                 onClick={handleSetup}
-                disabled={password.length === 0 || isSubmitting}>
+                disabled={password.length === 0 || isSubmitting}
+              >
                 {t("continue")}
               </Button>
             </WithStep>
             <WithStep step={SetupStep.DisplayQrCode} current={step}>
-              <Button type="submit" className="me-2 ms-2" onClick={() => setStep(SetupStep.EnterTotpCode)}>
+              <Button
+                type="submit"
+                className="me-2 ms-2"
+                onClick={() => setStep(SetupStep.EnterTotpCode)}
+              >
                 {t("continue")}
               </Button>
             </WithStep>
             <WithStep step={SetupStep.EnterTotpCode} current={step}>
-              <Button type="submit" className="me-2 ms-2" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="me-2 ms-2"
+                disabled={isSubmitting}
+              >
                 {t("enable")}
               </Button>
             </WithStep>

@@ -27,12 +27,24 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
   const router = useRouter();
   const session = useSession();
 
-  const teamId = searchParams?.get("teamId") ? Number(searchParams.get("teamId")) : undefined;
-  const platform = searchParams?.get("platform") ? Boolean(searchParams.get("platform")) : false;
+  const teamId = searchParams?.get("teamId")
+    ? Number(searchParams.get("teamId"))
+    : undefined;
+  const platform = searchParams?.get("platform")
+    ? Boolean(searchParams.get("platform"))
+    : false;
 
   const createWebhookMutation = trpc.viewer.webhook.create.useMutation({
     async onSuccess() {
-      toastManager.add({ title: t("webhook_created_successfully"), type: "success" });
+      if (typeof pendo !== "undefined") {
+        pendo.track("webhook_created", {
+          team_id: teamId,
+        });
+      }
+      toastManager.add({
+        title: t("webhook_created_successfully"),
+        type: "success",
+      });
       await utils.viewer.webhook.list.invalidate();
       revalidateWebhooksList();
       router.push("/settings/developer/webhooks");
@@ -53,7 +65,10 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
         platform,
       })
     ) {
-      toastManager.add({ title: t("webhook_subscriber_url_reserved"), type: "error" });
+      toastManager.add({
+        title: t("webhook_subscriber_url_reserved"),
+        type: "error",
+      });
       return;
     }
 
@@ -64,8 +79,12 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
     createWebhookMutation.mutate({
       subscriberUrl: values.subscriberUrl,
       eventTriggers: values.eventTriggers.filter((trigger) =>
-        WEBHOOK_TRIGGER_EVENTS.includes(trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number])
-      ) as unknown as Parameters<typeof createWebhookMutation.mutate>[0]["eventTriggers"],
+        WEBHOOK_TRIGGER_EVENTS.includes(
+          trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number]
+        )
+      ) as unknown as Parameters<
+        typeof createWebhookMutation.mutate
+      >[0]["eventTriggers"],
       active: values.active,
       payloadTemplate: values.payloadTemplate,
       secret: values.secret,
@@ -83,7 +102,9 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
       apps={installedApps?.items.map((app) => app.slug)}
       headerWrapper={(formMethods, children) => (
         <>
-          <WebhookFormHeader CTA={<WebhookVersionCTA formMethods={formMethods} />} />
+          <WebhookFormHeader
+            CTA={<WebhookVersionCTA formMethods={formMethods} />}
+          />
           {children}
         </>
       )}

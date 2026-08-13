@@ -1,15 +1,14 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
-
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import classNames from "@calcom/ui/classNames";
-import { Switch } from "@calcom/ui/components/form";
-import { ArrowLeftIcon, RotateCwIcon } from "@coss/ui/icons";
-import { showToast } from "@calcom/ui/components/toast";
 import type { ICalendarSwitchProps } from "@calcom/ui/components/calendar-switch";
+import { Switch } from "@calcom/ui/components/form";
+import { showToast } from "@calcom/ui/components/toast";
+import { ArrowLeftIcon, RotateCwIcon } from "@coss/ui/icons";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 
 type UserCalendarSwitchProps = Omit<ICalendarSwitchProps, "eventTypeId">;
 
@@ -56,12 +55,15 @@ const CalendarSwitch = (props: ICalendarSwitchProps) => {
           throw new Error("Something went wrong");
         }
       } else {
-        const res = await fetch(`/api/availability/calendar?${new URLSearchParams(body)}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const res = await fetch(
+          `/api/availability/calendar?${new URLSearchParams(body)}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (!res.ok) {
           throw new Error("Something went wrong");
@@ -71,6 +73,16 @@ const CalendarSwitch = (props: ICalendarSwitchProps) => {
     async onSettled() {
       await utils.viewer.apps.integrations.invalidate();
       await utils.viewer.calendars.connectedCalendars.invalidate();
+    },
+    onSuccess(_data, variables) {
+      if (typeof pendo !== "undefined") {
+        pendo.track("calendar_toggled", {
+          calendar_type: type,
+          external_id: externalId,
+          is_enabled: variables.isOn,
+          credential_id: credentialId,
+        });
+      }
     },
     onError() {
       setCheckedInternal(false);
@@ -95,7 +107,8 @@ const CalendarSwitch = (props: ICalendarSwitchProps) => {
           "ml-3 break-all text-sm font-medium leading-5",
           disabled ? "cursor-not-allowed opacity-25" : "cursor-pointer"
         )}
-        htmlFor={externalId}>
+        htmlFor={externalId}
+      >
         {name}
       </label>
       {!!props.destination && (

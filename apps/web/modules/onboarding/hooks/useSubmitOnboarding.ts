@@ -12,7 +12,8 @@ export const useSubmitOnboarding = () => {
 
   const intentToCreateOrg = {
     mutate: () => {},
-    mutateAsync: async (_input: Record<string, unknown>) => ({}) as { checkoutUrl?: string },
+    mutateAsync: async (_input: Record<string, unknown>) =>
+      ({} as { checkoutUrl?: string }),
   };
 
   const submitOnboarding = async (
@@ -56,7 +57,9 @@ export const useSubmitOnboarding = () => {
           let teamName: string | undefined;
 
           if (invite.team && invite.team.trim().length > 0) {
-            const matchingTeam = teams.find((team) => team.name.toLowerCase() === invite.team.toLowerCase());
+            const matchingTeam = teams.find(
+              (team) => team.name.toLowerCase() === invite.team.toLowerCase()
+            );
             if (matchingTeam?.isBeingMigrated && matchingTeam.id !== -1) {
               // Use team ID for migrated teams
               teamId = matchingTeam.id;
@@ -100,6 +103,17 @@ export const useSubmitOnboarding = () => {
         ...(options?.billingPeriod && { billingPeriod: options.billingPeriod }),
       });
 
+      if (typeof pendo !== "undefined") {
+        pendo.track("organization_onboarding_submitted", {
+          org_name: organizationDetails.name,
+          teams_count: teamsData.length,
+          invited_members_count: allInvitedMembers.length,
+          has_checkout_url: !!result?.checkoutUrl,
+          has_migrated_teams: teams.some((team) => team.isBeingMigrated),
+          billing_period: options?.billingPeriod,
+        });
+      }
+
       // If there's a checkout URL, redirect to Stripe (billing enabled flow)
       if (result?.checkoutUrl) {
         window.location.href = result?.checkoutUrl;
@@ -122,7 +136,8 @@ export const useSubmitOnboarding = () => {
         skipToPersonal(resetOnboarding);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create organization";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create organization";
       setError(errorMessage);
       showToast(errorMessage, "error");
       console.error("Organization creation error:", err);

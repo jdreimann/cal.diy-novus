@@ -1,15 +1,18 @@
-import type { Dispatch, SetStateAction } from "react";
-import { useState } from "react";
-import { z } from "zod";
-
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { MultiEmail } from "@calcom/ui/components/address";
 import { Button } from "@calcom/ui/components/button";
-import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+import {
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+} from "@calcom/ui/components/dialog";
 import { showToast } from "@calcom/ui/components/toast";
 import { TriangleAlertIcon, UserPlusIcon } from "@coss/ui/icons";
+import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
+import { z } from "zod";
 
 interface IAddGuestsDialog {
   isOpenDialog: boolean;
@@ -30,6 +33,12 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
 
   const addGuestsMutation = trpc.viewer.bookings.addGuests.useMutation({
     onSuccess: async () => {
+      if (typeof pendo !== "undefined") {
+        pendo.track("booking_guests_added", {
+          booking_id: bookingId,
+          guest_count: multiEmailValue.length,
+        });
+      }
       showToast(t("guests_added"), "success");
       setIsOpenDialog(false);
       setMultiEmailValue([""]);
@@ -78,7 +87,9 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
                   <TriangleAlertIcon className="h-5 w-5" />
                 </div>
                 <div className="ml-3">
-                  <p className="font-medium">{t("emails_must_be_unique_valid")}</p>
+                  <p className="font-medium">
+                    {t("emails_must_be_unique_valid")}
+                  </p>
                 </div>
               </div>
             )}
@@ -92,10 +103,15 @@ export const AddGuestsDialog = (props: IAddGuestsDialog) => {
               setIsOpenDialog(false);
             }}
             type="button"
-            color="secondary">
+            color="secondary"
+          >
             {t("cancel")}
           </Button>
-          <Button data-testid="add_members" loading={addGuestsMutation.isPending} onClick={handleAdd}>
+          <Button
+            data-testid="add_members"
+            loading={addGuestsMutation.isPending}
+            onClick={handleAdd}
+          >
             {t("add")}
           </Button>
         </DialogFooter>

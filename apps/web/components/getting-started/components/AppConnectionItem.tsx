@@ -1,9 +1,5 @@
-import Link from "next/link";
-import { useState } from "react";
-import posthog from "posthog-js";
-
-import { InstallAppButtonWithoutPlanCheck } from "@calcom/app-store/InstallAppButtonWithoutPlanCheck";
 import type { TDependencyData } from "@calcom/app-store/_appRegistry";
+import { InstallAppButtonWithoutPlanCheck } from "@calcom/app-store/InstallAppButtonWithoutPlanCheck";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -12,6 +8,9 @@ import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { showToast } from "@calcom/ui/components/toast";
 import { ArrowRightIcon, CircleAlertIcon } from "@coss/ui/icons";
+import Link from "next/link";
+import posthog from "posthog-js";
+import { useState } from "react";
 
 interface IAppConnectionItem {
   title: string;
@@ -26,18 +25,20 @@ interface IAppConnectionItem {
 }
 
 const AppConnectionItem = (props: IAppConnectionItem) => {
-  const { title, logo, type, installed, isDefault, defaultInstall, slug } = props;
+  const { title, logo, type, installed, isDefault, defaultInstall, slug } =
+    props;
   const { t } = useLocale();
   const utils = trpc.useUtils();
-  const setDefaultConferencingApp = trpc.viewer.apps.setDefaultConferencingApp.useMutation({
-    onSuccess: async () => {
-      await utils.viewer.me.invalidate();
-    },
-    onError: (error) => {
-      showToast(t("something_went_wrong"), "error");
-      console.error(error);
-    },
-  });
+  const setDefaultConferencingApp =
+    trpc.viewer.apps.setDefaultConferencingApp.useMutation({
+      onSuccess: async () => {
+        await utils.viewer.me.invalidate();
+      },
+      onError: (error) => {
+        showToast(t("something_went_wrong"), "error");
+        console.error(error);
+      },
+    });
   const dependency = props.dependencyData?.find((data) => !data.installed);
 
   const [isInstalling, setInstalling] = useState(false);
@@ -64,7 +65,10 @@ const AppConnectionItem = (props: IAppConnectionItem) => {
             },
             onError: (error) => {
               if (error instanceof Error)
-                showToast(error.message || t("app_could_not_be_installed"), "error");
+                showToast(
+                  error.message || t("app_could_not_be_installed"),
+                  "error"
+                );
             },
           }}
           render={(buttonProps) => (
@@ -95,9 +99,12 @@ const AppConnectionItem = (props: IAppConnectionItem) => {
                             <>
                               <Link
                                 href={`${WEBAPP_URL}/getting-started/connected-calendar`}
-                                className="flex items-center text-xs underline">
+                                className="flex items-center text-xs underline"
+                              >
                                 <span className="mr-1">
-                                  {t("connect_app", { dependencyName: dependency.name })}
+                                  {t("connect_app", {
+                                    dependencyName: dependency.name,
+                                  })}
                                 </span>
                                 <ArrowRightIcon className="inline-block h-3 w-3" />
                               </Link>
@@ -116,11 +123,22 @@ const AppConnectionItem = (props: IAppConnectionItem) => {
                   app_slug: slug,
                   has_dependency: !!dependency,
                 });
+                if (typeof pendo !== "undefined") {
+                  pendo.track("onboarding_app_connect_clicked", {
+                    app_title: title,
+                    app_type: type,
+                    app_slug: slug,
+                    has_dependency: !!dependency,
+                  });
+                }
                 // Save cookie key to return url step
                 document.cookie = `return-to=${window.location.href};path=/;max-age=3600;SameSite=Lax`;
-                buttonProps && buttonProps.onClick && buttonProps?.onClick(event);
+                buttonProps &&
+                  buttonProps.onClick &&
+                  buttonProps?.onClick(event);
                 setInstalling(true);
-              }}>
+              }}
+            >
               {installed ? t("installed") : t("connect")}
             </Button>
           )}
@@ -136,7 +154,8 @@ const AppConnectionItem = (props: IAppConnectionItem) => {
               if (slug) {
                 setDefaultConferencingApp.mutate({ slug });
               }
-            }}>
+            }}
+          >
             {t("set_as_default")}
           </Button>
         )}

@@ -1,9 +1,8 @@
-import { useState } from "react";
-
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui/components/toast";
+import { useState } from "react";
 
 interface UseBookingConfirmationOptions {
   isRecurring?: boolean;
@@ -18,20 +17,38 @@ interface BookingConfirmParams {
   reason?: string;
 }
 
-export function useBookingConfirmation(options: UseBookingConfirmationOptions = {}) {
+export function useBookingConfirmation(
+  options: UseBookingConfirmationOptions = {}
+) {
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const [rejectionDialogIsOpen, setRejectionDialogIsOpen] = useState(false);
 
-  const { isRecurring = false, isTabRecurring = false, isTabUnconfirmed = false } = options;
+  const {
+    isRecurring = false,
+    isTabRecurring = false,
+    isTabUnconfirmed = false,
+  } = options;
 
   const mutation = trpc.viewer.bookings.confirm.useMutation({
     onSuccess: (data) => {
       if (data?.status === BookingStatus.REJECTED) {
         setRejectionDialogIsOpen(false);
         showToast(t("booking_rejection_success"), "success");
+        if (typeof pendo !== "undefined") {
+          pendo.track("booking_rejected", {
+            is_recurring: isRecurring,
+          });
+        }
       } else {
         showToast(t("booking_confirmation_success"), "success");
+        if (typeof pendo !== "undefined") {
+          pendo.track("booking_confirmed", {
+            is_recurring: isRecurring,
+            is_tab_recurring: isTabRecurring,
+            is_tab_unconfirmed: isTabUnconfirmed,
+          });
+        }
       }
       utils.viewer.bookings.invalidate();
       utils.viewer.me.bookingUnconfirmedCount.invalidate();
@@ -42,7 +59,12 @@ export function useBookingConfirmation(options: UseBookingConfirmationOptions = 
     },
   });
 
-  const bookingConfirm = ({ bookingId, confirmed, recurringEventId, reason }: BookingConfirmParams) => {
+  const bookingConfirm = ({
+    bookingId,
+    confirmed,
+    recurringEventId,
+    reason,
+  }: BookingConfirmParams) => {
     let body = {
       bookingId,
       confirmed,
@@ -53,7 +75,11 @@ export function useBookingConfirmation(options: UseBookingConfirmationOptions = 
      * Only pass down the recurring event id when we need to confirm the entire series, which happens in
      * the "Recurring" tab and "Unconfirmed" tab, to support confirming discretionally in the "Recurring" tab.
      */
-    if ((isTabRecurring || isTabUnconfirmed) && isRecurring && recurringEventId) {
+    if (
+      (isTabRecurring || isTabUnconfirmed) &&
+      isRecurring &&
+      recurringEventId
+    ) {
       body = Object.assign({}, body, { recurringEventId });
     }
 

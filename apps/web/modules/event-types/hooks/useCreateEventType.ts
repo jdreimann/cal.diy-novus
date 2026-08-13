@@ -1,13 +1,12 @@
-import { useState } from "react";
-import type { z } from "zod";
-
+import { useCreateEventTypeForm } from "@calcom/atoms/hooks/event-types/private/useCreateEventTypeForm";
 import { createEventTypeInput } from "@calcom/features/eventtypes/lib/types";
 import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";
 import type { EventType } from "@calcom/prisma/client";
 import { trpc } from "@calcom/trpc/react";
-import { useCreateEventTypeForm } from "@calcom/atoms/hooks/event-types/private/useCreateEventTypeForm";
+import { useState } from "react";
+import type { z } from "zod";
 
 export const useCreateEventType = (
   onSuccessMutation: (eventType: EventType) => void,
@@ -21,6 +20,15 @@ export const useCreateEventType = (
 
   const createMutation = trpc.viewer.eventTypesHeavy.create.useMutation({
     onSuccess: async ({ eventType }) => {
+      if (typeof pendo !== "undefined") {
+        pendo.track("event_type_created", {
+          event_type_id: eventType.id,
+          event_type_title: eventType.title,
+          event_type_slug: eventType.slug,
+          team_id: eventType.teamId,
+          is_managed: isManagedEventType,
+        });
+      }
       onSuccessMutation(eventType);
 
       await utils.viewer.eventTypes.getEventTypesFromGroup.fetchInfinite({
@@ -42,7 +50,9 @@ export const useCreateEventType = (
       }
 
       if (err.data?.code === "UNAUTHORIZED") {
-        error = `${err.data.code}: ${t("error_event_type_unauthorized_create")}`;
+        error = `${err.data.code}: ${t(
+          "error_event_type_unauthorized_create"
+        )}`;
       }
       onErrorMutation(error);
     },

@@ -1,15 +1,12 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent } from "@calcom/ui/components/dialog";
 import { Form, PasswordField } from "@calcom/ui/components/form";
-
 import TwoFactor from "@components/auth/TwoFactor";
-
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import TwoFactorAuthAPI from "./TwoFactorAuthAPI";
 import TwoFactorModalHeader from "./TwoFactorModalHeader";
 
@@ -25,7 +22,10 @@ interface DisableTwoFactorValues {
   password: string;
 }
 
-const DisableTwoFactorAuthModal = ({ onDisable, onCancel }: DisableTwoFactorAuthModalProps) => {
+const DisableTwoFactorAuthModal = ({
+  onDisable,
+  onCancel,
+}: DisableTwoFactorAuthModalProps) => {
   const [isDisabling, setIsDisabling] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { t } = useLocale();
@@ -40,6 +40,9 @@ const DisableTwoFactorAuthModal = ({ onDisable, onCancel }: DisableTwoFactorAuth
     try {
       const response = await TwoFactorAuthAPI.disable(password, totpCode);
       if (response.status === 200) {
+        if (typeof pendo !== "undefined") {
+          pendo.track("two_factor_disabled");
+        }
         onDisable();
         return;
       }
@@ -68,7 +71,10 @@ const DisableTwoFactorAuthModal = ({ onDisable, onCancel }: DisableTwoFactorAuth
     <Dialog open={true}>
       <DialogContent>
         <Form form={form} handleSubmit={handleDisable}>
-          <TwoFactorModalHeader title={t("disable_2fa")} description={t("disable_2fa_recommendation")} />
+          <TwoFactorModalHeader
+            title={t("disable_2fa")}
+            description={t("disable_2fa_recommendation")}
+          />
 
           <div className="mb-4">
             <PasswordField
@@ -79,7 +85,9 @@ const DisableTwoFactorAuthModal = ({ onDisable, onCancel }: DisableTwoFactorAuth
               className="border-default mt-1 block w-full rounded-md border px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-black"
             />
             <TwoFactor center={false} />
-            {errorMessage && <p className="mt-1 text-sm text-red-700">{errorMessage}</p>}
+            {errorMessage && (
+              <p className="mt-1 text-sm text-red-700">{errorMessage}</p>
+            )}
           </div>
 
           <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">

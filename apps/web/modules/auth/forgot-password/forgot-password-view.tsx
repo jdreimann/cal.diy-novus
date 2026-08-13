@@ -1,23 +1,22 @@
 "use client";
 
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { Button } from "@calcom/ui/components/button";
+import { EmailField } from "@calcom/ui/components/form";
+import AuthContainer from "@components/ui/AuthContainer";
 // eslint-disable-next-line no-restricted-imports
 import { debounce } from "lodash";
 import Link from "next/link";
 import type { CSSProperties, SyntheticEvent } from "react";
 import React from "react";
 
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Button } from "@calcom/ui/components/button";
-import { EmailField } from "@calcom/ui/components/form";
-
-import AuthContainer from "@components/ui/AuthContainer";
-
 export type PageProps = {
   csrfToken?: string;
 };
 
 export default function ForgotPassword(props: PageProps) {
-  const csrfToken = "csrfToken" in props ? (props.csrfToken as string) : undefined;
+  const csrfToken =
+    "csrfToken" in props ? (props.csrfToken as string) : undefined;
   const { t } = useLocale();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<{ message: string } | null>(null);
@@ -43,6 +42,11 @@ export default function ForgotPassword(props: PageProps) {
       if (!res.ok) {
         setError(json);
       } else {
+        if (typeof pendo !== "undefined") {
+          pendo.track("forgot_password_submitted", {
+            success: true,
+          });
+        }
         setSuccess(true);
       }
 
@@ -89,7 +93,11 @@ export default function ForgotPassword(props: PageProps) {
         <p className="">{t("password_reset_email", { email })}</p>
         <p className="">{t("password_reset_leading")}</p>
         {error && <p className="text-center text-red-600">{error.message}</p>}
-        <Button color="secondary" className="w-full justify-center" href="/auth/login">
+        <Button
+          color="secondary"
+          className="w-full justify-center"
+          href="/auth/login"
+        >
           {t("back_to_signin")}
         </Button>
       </div>
@@ -108,11 +116,14 @@ export default function ForgotPassword(props: PageProps) {
             </Link>
           </>
         )
-      }>
+      }
+    >
       {success && <Success />}
       {!success && (
         <>
-          <div className="stack-y-6">{error && <p className="text-red-600">{error.message}</p>}</div>
+          <div className="stack-y-6">
+            {error && <p className="text-red-600">{error.message}</p>}
+          </div>
           <form
             className="stack-y-6"
             onSubmit={handleSubmit}
@@ -124,8 +135,14 @@ export default function ForgotPassword(props: PageProps) {
                 "--cal-brand-text": "Black",
                 "--cal-brand-subtle": "#9CA3AF",
               } as CSSProperties
-            }>
-            <input name="csrfToken" type="hidden" defaultValue={csrfToken} hidden />
+            }
+          >
+            <input
+              name="csrfToken"
+              type="hidden"
+              defaultValue={csrfToken}
+              hidden
+            />
             <EmailField
               onChange={handleChange}
               id="email"
@@ -141,7 +158,8 @@ export default function ForgotPassword(props: PageProps) {
                 color="secondary"
                 disabled={loading}
                 aria-label={t("request_password_reset")}
-                loading={loading}>
+                loading={loading}
+              >
                 {t("request_password_reset")}
               </Button>
             </div>

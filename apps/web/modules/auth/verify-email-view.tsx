@@ -1,10 +1,5 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import posthog from "posthog-js";
-import { useEffect } from "react";
-
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -13,6 +8,10 @@ import useEmailVerifyCheck from "@calcom/trpc/react/hooks/useEmailVerifyCheck";
 import { Button } from "@calcom/ui/components/button";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 import { showToast } from "@calcom/ui/components/toast";
+import { useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import posthog from "posthog-js";
+import { useEffect } from "react";
 
 const EMAIL_CLIENTS = [
   {
@@ -50,7 +49,9 @@ function VerifyEmailPage() {
       posthog.capture("verify_email_already_verified", {
         onboarding_v3_enabled: flags["onboarding-v3"],
       });
-      const gettingStartedPath = flags["onboarding-v3"] ? "/onboarding/getting-started" : "/getting-started";
+      const gettingStartedPath = flags["onboarding-v3"]
+        ? "/onboarding/getting-started"
+        : "/getting-started";
       router.replace(gettingStartedPath);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +68,10 @@ function VerifyEmailPage() {
             dashedBorder={false}
             Icon="mail-open"
             headline={t("check_your_email")}
-            description={t("verify_email_page_body", { email: session?.user?.email, appName: APP_NAME })}
+            description={t("verify_email_page_body", {
+              email: session?.user?.email,
+              appName: APP_NAME,
+            })}
             className="bg-default"
             buttonRaw={
               <>
@@ -78,8 +82,10 @@ function VerifyEmailPage() {
                       color="secondary"
                       href={href}
                       target="_blank"
-                      rel="noopener noreferrer">
-                      <img src={icon} alt={name} className="me-1 h-4 w-4" /> {name}
+                      rel="noopener noreferrer"
+                    >
+                      <img src={icon} alt={name} className="me-1 h-4 w-4" />{" "}
+                      {name}
                     </Button>
                   ))}
                 </div>
@@ -89,16 +95,21 @@ function VerifyEmailPage() {
                     loading={mutation.isPending}
                     onClick={() => {
                       posthog.capture("verify_email_resend_clicked");
+                      if (typeof pendo !== "undefined") {
+                        pendo.track("verify_email_resend_clicked");
+                      }
                       showToast(t("send_email"), "success");
                       mutation.mutate();
-                    }}>
+                    }}
+                  >
                     {t("resend_email")}
                   </Button>
                   <Button
                     color="minimal"
                     onClick={() => {
                       signOut({ callbackUrl: "/signup" });
-                    }}>
+                    }}
+                  >
                     {t("use_different_email")}
                   </Button>
                 </div>
