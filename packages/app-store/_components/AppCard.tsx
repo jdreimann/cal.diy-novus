@@ -1,7 +1,3 @@
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import Link from "next/link";
-import posthog from "posthog-js";
-
 import { useAppContextWithSchema } from "@calcom/app-store/EventTypeAppContext";
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -10,7 +6,9 @@ import { Button } from "@calcom/ui/components/button";
 import { Switch } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { Section } from "@calcom/ui/components/section";
-
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import Link from "next/link";
+import posthog from "posthog-js";
 import type { AppCardApp } from "../types";
 import OmniInstallAppButton from "./OmniInstallAppButton";
 
@@ -43,7 +41,11 @@ export default function AppCard({
 }) {
   const { t } = useLocale();
   const [animationRef] = useAutoAnimate<HTMLDivElement>();
-  const { setAppData, LockedIcon, disabled: managedDisabled } = useAppContextWithSchema();
+  const {
+    setAppData,
+    LockedIcon,
+    disabled: managedDisabled,
+  } = useAppContextWithSchema();
   const isPlatform = useIsPlatform();
 
   return (
@@ -55,7 +57,8 @@ export default function AppCard({
               <Section.Title>{app?.name}</Section.Title>
               {!app?.isInstalled && (
                 <span className="bg-emphasis ml-1 rounded px-1 py-0.5 text-xs font-medium leading-3 tracking-[0.01em]">
-                  {app?.categories[0].charAt(0).toUpperCase() + app?.categories[0].slice(1)}
+                  {app?.categories[0].charAt(0).toUpperCase() +
+                    app?.categories[0].slice(1)}
                 </span>
               )}
             </div>
@@ -63,7 +66,10 @@ export default function AppCard({
           </div>
         }
         iconSlot={
-          <Link href={`/apps/${app.slug}`} className="flex h-8 w-8 items-center justify-center">
+          <Link
+            href={`/apps/${app.slug}`}
+            className="flex h-8 w-8 items-center justify-center"
+          >
             <img
               className={classNames(
                 app?.logo.includes("-dark") && "dark:invert",
@@ -73,7 +79,8 @@ export default function AppCard({
               alt={app?.name}
             />
           </Link>
-        }>
+        }
+      >
         <div>
           <div>
             {/* {app.credentialOwner && !isPlatform && (
@@ -101,6 +108,12 @@ export default function AppCard({
                       app_slug: app.slug,
                       enabled: enabled,
                     });
+                    if (typeof pendo !== "undefined") {
+                      pendo.track("event_type_app_toggled", {
+                        app_slug: app.slug,
+                        is_enabled: enabled,
+                      });
+                    }
                     if (switchOnClick) {
                       switchOnClick(enabled);
                     }
@@ -127,27 +140,34 @@ export default function AppCard({
       {hideAppCardOptions
         ? null
         : app?.isInstalled &&
-        switchChecked && (
-          <div ref={animationRef}>
-            {app.isSetupAlready === undefined || app.isSetupAlready ? (
-              <div className="relative text-sm [&_input]:mb-0 [&_input]:leading-4">
-                {!hideSettingsIcon && !isPlatform && (
-                  <Link href={`/apps/${app.slug}/setup`} className="absolute right-0 top-0 ">
-                    <Icon name="settings" className="text-default h-4 w-4" aria-hidden="true" />
+          switchChecked && (
+            <div ref={animationRef}>
+              {app.isSetupAlready === undefined || app.isSetupAlready ? (
+                <div className="relative text-sm [&_input]:mb-0 [&_input]:leading-4">
+                  {!hideSettingsIcon && !isPlatform && (
+                    <Link
+                      href={`/apps/${app.slug}/setup`}
+                      className="absolute right-0 top-0 "
+                    >
+                      <Icon
+                        name="settings"
+                        className="text-default h-4 w-4"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  )}
+                  {children}
+                </div>
+              ) : (
+                <div className="flex h-64 w-full flex-col items-center justify-center gap-4 ">
+                  <p>{t("this_app_is_not_setup_already")}</p>
+                  <Link href={`/apps/${app.slug}/setup`}>
+                    <Button StartIcon="settings">{t("setup")}</Button>
                   </Link>
-                )}
-                {children}
-              </div>
-            ) : (
-              <div className="flex h-64 w-full flex-col items-center justify-center gap-4 ">
-                <p>{t("this_app_is_not_setup_already")}</p>
-                <Link href={`/apps/${app.slug}/setup`}>
-                  <Button StartIcon="settings">{t("setup")}</Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+            </div>
+          )}
     </Section>
   );
 }

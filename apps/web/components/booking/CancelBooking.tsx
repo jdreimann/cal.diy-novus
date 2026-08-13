@@ -9,7 +9,12 @@ import type { CancellationReasonRequirement } from "@calcom/prisma/enums";
 import type { RecurringEvent } from "@calcom/types/Calendar";
 import classNames from "@calcom/ui/classNames";
 import { Button } from "@calcom/ui/components/button";
-import { CheckboxField, Label, Select, TextArea } from "@calcom/ui/components/form";
+import {
+  CheckboxField,
+  Label,
+  Select,
+  TextArea,
+} from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { InfoIcon, XIcon } from "@coss/ui/icons";
 import { useCallback, useState } from "react";
@@ -37,7 +42,9 @@ const InternalNotePresetsSelect = ({
     return null;
   }
 
-  const handleSelectChange = (option: { value: number | string; label: string } | null) => {
+  const handleSelectChange = (
+    option: { value: number | string; label: string } | null
+  ) => {
     if (option?.value === "other") {
       setShowOtherInput(true);
       setCancellationReason("");
@@ -66,7 +73,9 @@ const InternalNotePresetsSelect = ({
         <TextArea
           rows={3}
           placeholder={t("internal_booking_note_description")}
-          onChange={(e) => onPresetSelect?.({ value: "other", label: e.target.value })}
+          onChange={(e) =>
+            onPresetSelect?.({ value: "other", label: e.target.value })
+          }
         />
       )}
     </div>
@@ -107,7 +116,11 @@ type Props = {
     eventType: unknown;
   };
   isHost: boolean;
-  internalNotePresets: { id: number; name: string; cancellationReason: string | null }[];
+  internalNotePresets: {
+    id: number;
+    name: string;
+    cancellationReason: string | null;
+  }[];
   renderContext: "booking-single-view" | "dialog";
   eventTypeMetadata?: Record<string, unknown> | null;
   requiresCancellationReason?: CancellationReasonRequirement | null;
@@ -128,9 +141,17 @@ export default function CancelBooking(props: Props) {
     eventTypeMetadata,
   } = props;
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(booking ? null : t("booking_already_cancelled"));
-  const [internalNote, setInternalNote] = useState<{ id: number; name: string } | null>(null);
-  const [acknowledgeCancellationNoShowFee, setAcknowledgeCancellationNoShowFee] = useState(false);
+  const [error, setError] = useState<string | null>(
+    booking ? null : t("booking_already_cancelled")
+  );
+  const [internalNote, setInternalNote] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [
+    acknowledgeCancellationNoShowFee,
+    setAcknowledgeCancellationNoShowFee,
+  ] = useState(false);
 
   const getAppMetadata = (appId: string): Record<string, unknown> | null => {
     if (!eventTypeMetadata?.apps || !appId) return null;
@@ -139,10 +160,12 @@ export default function CancelBooking(props: Props) {
   };
 
   const timeValue = booking?.payment?.appId
-    ? (getAppMetadata(booking.payment.appId) as Record<string, unknown> | null)?.autoChargeNoShowFeeTimeValue
+    ? (getAppMetadata(booking.payment.appId) as Record<string, unknown> | null)
+        ?.autoChargeNoShowFeeTimeValue
     : null;
   const timeUnit = booking?.payment?.appId
-    ? (getAppMetadata(booking.payment.appId) as Record<string, unknown> | null)?.autoChargeNoShowFeeTimeUnit
+    ? (getAppMetadata(booking.payment.appId) as Record<string, unknown> | null)
+        ?.autoChargeNoShowFeeTimeUnit
     : null;
 
   const autoChargeNoShowFee = () => {
@@ -162,7 +185,8 @@ export default function CancelBooking(props: Props) {
   const cancellationNoShowFeeWarning = autoChargeNoShowFee();
 
   const isCancellationUserHost =
-    props.isHost || bookingCancelledEventProps.organizer.email === currentUserEmail;
+    props.isHost ||
+    bookingCancelledEventProps.organizer.email === currentUserEmail;
 
   const isReasonRequired = isCancellationReasonRequired(
     props.requiresCancellationReason,
@@ -171,11 +195,17 @@ export default function CancelBooking(props: Props) {
 
   const missingRequiredReason = isReasonRequired && !cancellationReason?.trim();
   const hostMissingInternalNote =
-    isCancellationUserHost && props.internalNotePresets.length > 0 && !internalNote?.id;
+    isCancellationUserHost &&
+    props.internalNotePresets.length > 0 &&
+    !internalNote?.id;
   const cancellationNoShowFeeNotAcknowledged =
-    !props.isHost && cancellationNoShowFeeWarning && !acknowledgeCancellationNoShowFee;
+    !props.isHost &&
+    cancellationNoShowFeeWarning &&
+    !acknowledgeCancellationNoShowFee;
   const canCancel =
-    !missingRequiredReason && !hostMissingInternalNote && !cancellationNoShowFeeNotAcknowledged;
+    !missingRequiredReason &&
+    !hostMissingInternalNote &&
+    !cancellationNoShowFeeNotAcknowledged;
   const cancelBookingRef = useCallback((node: HTMLTextAreaElement) => {
     if (node !== null) {
       // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- CancelBooking is not usually used in embed mode
@@ -194,14 +224,21 @@ export default function CancelBooking(props: Props) {
             <XIcon className="h-6 w-6 text-red-600" />
           </div>
           <div className="mt-3 text-center sm:mt-5">
-            <h3 className="text-emphasis text-lg font-medium leading-6" id="modal-title">
+            <h3
+              className="text-emphasis text-lg font-medium leading-6"
+              id="modal-title"
+            >
               {error}
             </h3>
           </div>
         </div>
       )}
       {!error && (
-        <div className={classNames(isRenderedAsCancelDialog ? "-mt-2 mb-8" : "mt-5 sm:mt-6")}>
+        <div
+          className={classNames(
+            isRenderedAsCancelDialog ? "-mt-2 mb-8" : "mt-5 sm:mt-6"
+          )}
+        >
           {props.isHost && props.internalNotePresets.length > 0 && (
             <>
               <InternalNotePresetsSelect
@@ -218,7 +255,9 @@ export default function CancelBooking(props: Props) {
                     );
                     if (foundInternalNote) {
                       setInternalNote(foundInternalNote);
-                      setCancellationReason(foundInternalNote.cancellationReason || "");
+                      setCancellationReason(
+                        foundInternalNote.cancellationReason || ""
+                      );
                     }
                   }
                 }}
@@ -226,7 +265,13 @@ export default function CancelBooking(props: Props) {
             </>
           )}
 
-          <Label>{t(isReasonRequired ? "cancellation_reason" : "cancellation_reason_optional_label")}</Label>
+          <Label>
+            {t(
+              isReasonRequired
+                ? "cancellation_reason"
+                : "cancellation_reason_optional_label"
+            )}
+          </Label>
 
           <TextArea
             data-testid="cancel_reason"
@@ -234,7 +279,10 @@ export default function CancelBooking(props: Props) {
             placeholder={t("cancellation_reason_placeholder")}
             value={cancellationReason}
             onChange={(e) => setCancellationReason(e.target.value)}
-            className={classNames("mb-4 w-full", !isRenderedAsCancelDialog && "mt-2")}
+            className={classNames(
+              "mb-4 w-full",
+              !isRenderedAsCancelDialog && "mt-2"
+            )}
             rows={3}
           />
           {isCancellationUserHost ? (
@@ -253,12 +301,18 @@ export default function CancelBooking(props: Props) {
                     timeValue,
                     timeUnit,
                     amount: booking.payment.amount / 100,
-                    formatParams: { amount: { currency: booking.payment.currency } },
+                    formatParams: {
+                      amount: { currency: booking.payment.currency },
+                    },
                   })}
-                  onChange={(e) => setAcknowledgeCancellationNoShowFee(e.target.checked)}
+                  onChange={(e) =>
+                    setAcknowledgeCancellationNoShowFee(e.target.checked)
+                  }
                   descriptionClassName="text-info font-semibold"
                 />
-                <p className="text-subtle ml-9 mt-2 text-sm">{t("contact_organizer")}</p>
+                <p className="text-subtle ml-9 mt-2 text-sm">
+                  {t("contact_organizer")}
+                </p>
               </div>
             </div>
           )}
@@ -267,11 +321,13 @@ export default function CancelBooking(props: Props) {
               className={classNames(
                 "ml-auto flex w-full space-x-4",
                 isRenderedAsCancelDialog && "justify-end"
-              )}>
+              )}
+            >
               <Button
                 className="ml-auto"
                 color="secondary"
-                onClick={() => props.setIsCancellationMode(false)}>
+                onClick={() => props.setIsCancellationMode(false)}
+              >
                 {t("nevermind")}
               </Button>
               <Button
@@ -280,7 +336,9 @@ export default function CancelBooking(props: Props) {
                 onClick={async () => {
                   setLoading(true);
 
-                  const response = await fetch("/api/csrf?sameSite=none", { cache: "no-store" });
+                  const response = await fetch("/api/csrf?sameSite=none", {
+                    cache: "no-store",
+                  });
                   const { csrfToken } = await response.json();
 
                   const res = await fetch("/api/cancel", {
@@ -306,6 +364,16 @@ export default function CancelBooking(props: Props) {
                   } as unknown;
 
                   if (res.status >= 200 && res.status < 300) {
+                    if (typeof pendo !== "undefined") {
+                      pendo.track("booking_cancelled", {
+                        booking_uid: booking?.uid,
+                        has_cancellation_reason: !!cancellationReason,
+                        all_remaining_bookings: allRemainingBookings,
+                        is_host: props.isHost,
+                        has_internal_note: !!internalNote,
+                        has_no_show_fee: cancellationNoShowFeeWarning,
+                      });
+                    }
                     sdkActionManager?.fire("bookingCancelled", {
                       ...bookingCancelledEventProps,
                       booking: bookingWithCancellationReason,
@@ -319,9 +387,9 @@ export default function CancelBooking(props: Props) {
                     setLoading(false);
                     const errorMessage =
                       data.message ||
-                      `${t("error_with_status_code_occured", { status: res.status })} ${t(
-                        "please_try_again"
-                      )}`;
+                      `${t("error_with_status_code_occured", {
+                        status: res.status,
+                      })} ${t("please_try_again")}`;
 
                     if (props.showErrorAsToast) {
                       showToast(errorMessage, "error");
@@ -330,8 +398,11 @@ export default function CancelBooking(props: Props) {
                     }
                   }
                 }}
-                loading={loading}>
-                {props.allRemainingBookings ? t("cancel_all_remaining") : t("cancel_event")}
+                loading={loading}
+              >
+                {props.allRemainingBookings
+                  ? t("cancel_all_remaining")
+                  : t("cancel_event")}
               </Button>
             </div>
           </div>

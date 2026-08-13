@@ -1,7 +1,10 @@
 "use client";
 
 import getAppCategoryTitle from "@calcom/app-store/_utils/getAppCategoryTitle";
-import { AppList, type HandleDisconnect } from "@calcom/features/apps/components/AppList";
+import {
+  AppList,
+  type HandleDisconnect,
+} from "@calcom/features/apps/components/AppList";
 import type { UpdateUsersDefaultConferencingAppParams } from "@calcom/features/apps/components/AppSetDefaultLinkDialog";
 import type { RemoveAppParams } from "@calcom/features/apps/components/DisconnectIntegrationModal";
 import DisconnectIntegrationModal from "@calcom/features/apps/components/DisconnectIntegrationModal";
@@ -42,11 +45,14 @@ const IntegrationsContainer = ({
     includeTeamInstalledApps: true,
   });
 
-  const { data: defaultConferencingApp } = trpc.viewer.apps.getUsersDefaultConferencingApp.useQuery();
+  const { data: defaultConferencingApp } =
+    trpc.viewer.apps.getUsersDefaultConferencingApp.useQuery();
 
-  const updateDefaultAppMutation = trpc.viewer.apps.updateUserDefaultConferencingApp.useMutation();
+  const updateDefaultAppMutation =
+    trpc.viewer.apps.updateUserDefaultConferencingApp.useMutation();
 
-  const updateLocationsMutation = trpc.viewer.eventTypes.bulkUpdateToDefaultLocation.useMutation();
+  const updateLocationsMutation =
+    trpc.viewer.eventTypes.bulkUpdateToDefaultLocation.useMutation();
 
   const { data: eventTypesQueryData, isFetching: isEventTypesFetching } =
     trpc.viewer.eventTypes.bulkEventFetch.useQuery();
@@ -61,6 +67,11 @@ const IntegrationsContainer = ({
       { appSlug, appLink },
       {
         onSuccess: () => {
+          if (typeof pendo !== "undefined") {
+            pendo.track("default_conferencing_app_changed", {
+              app_slug: appSlug,
+            });
+          }
           showToast("Default app updated successfully", "success");
           utils.viewer.apps.getUsersDefaultConferencingApp.invalidate();
           onSuccessCallback();
@@ -73,7 +84,10 @@ const IntegrationsContainer = ({
     );
   };
 
-  const handleBulkUpdateDefaultLocation = ({ eventTypeIds, callback }: BulkUpdatParams) => {
+  const handleBulkUpdateDefaultLocation = ({
+    eventTypeIds,
+    callback,
+  }: BulkUpdatParams) => {
     updateLocationsMutation.mutate(
       {
         eventTypeIds,
@@ -96,7 +110,10 @@ const IntegrationsContainer = ({
   };
 
   // TODO: Refactor and reuse getAppCategories?
-  const emptyIcon: Record<AppCategories, React.ComponentProps<typeof Icon>["name"]> = {
+  const emptyIcon: Record<
+    AppCategories,
+    React.ComponentProps<typeof Icon>["name"]
+  > = {
     calendar: "calendar",
     conferencing: "video",
     automation: "share-2",
@@ -115,7 +132,10 @@ const IntegrationsContainer = ({
       customLoader={<SkeletonLoader />}
       success={({ data }) => {
         if (!data.items.length) {
-          const emptyHeaderCategory = getAppCategoryTitle(variant || "other", true);
+          const emptyHeaderCategory = getAppCategoryTitle(
+            variant || "other",
+            true
+          );
 
           return (
             <EmptyScreen
@@ -123,12 +143,19 @@ const IntegrationsContainer = ({
               headline={t("no_category_apps", {
                 category: emptyHeaderCategory,
               })}
-              description={t(`no_category_apps_description_${variant || "other"}`)}
+              description={t(
+                `no_category_apps_description_${variant || "other"}`
+              )}
               buttonRaw={
                 <Button
                   color="secondary"
                   data-testid={`connect-${variant || "other"}-apps`}
-                  href={variant ? `/apps/categories/${variant}` : "/apps/categories/other"}>
+                  href={
+                    variant
+                      ? `/apps/categories/${variant}`
+                      : "/apps/categories/other"
+                  }
+                >
                   {t(`connect_${variant || "other"}_apps`)}
                 </Button>
               }
@@ -146,7 +173,8 @@ const IntegrationsContainer = ({
                   data-testid="add-apps"
                   href={variant ? `/apps/categories/${variant}` : "/apps"}
                   color="secondary"
-                  StartIcon="plus">
+                  StartIcon="plus"
+                >
                   {t("add")}
                 </Button>
               }
@@ -157,12 +185,18 @@ const IntegrationsContainer = ({
               data={data}
               variant={variant}
               defaultConferencingApp={defaultConferencingApp}
-              handleUpdateUserDefaultConferencingApp={handleUpdateUserDefaultConferencingApp}
+              handleUpdateUserDefaultConferencingApp={
+                handleUpdateUserDefaultConferencingApp
+              }
               handleBulkUpdateDefaultLocation={handleBulkUpdateDefaultLocation}
-              isBulkUpdateDefaultLocationPending={updateDefaultAppMutation.isPending}
+              isBulkUpdateDefaultLocationPending={
+                updateDefaultAppMutation.isPending
+              }
               eventTypes={eventTypesQueryData?.eventTypes}
               isEventTypesFetching={isEventTypesFetching}
-              handleConnectDisconnectIntegrationMenuToggle={handleConnectDisconnectIntegrationMenuToggle}
+              handleConnectDisconnectIntegrationMenuToggle={
+                handleConnectDisconnectIntegrationMenuToggle
+              }
               handleBulkEditDialogToggle={handleBulkEditDialogToggle}
               AppListCardComponent={AppListCardWebWrapper}
             />
@@ -185,16 +219,25 @@ type PageProps = {
   installedCalendars: RouterOutputs["viewer"]["apps"]["integrations"];
 };
 
-export default function InstalledApps({ category, connectedCalendars, installedCalendars }: PageProps) {
+export default function InstalledApps({
+  category,
+  connectedCalendars,
+  installedCalendars,
+}: PageProps) {
   const { t } = useLocale();
   const utils = trpc.useUtils();
-  const categoryList: AppCategories[] = Object.values(AppCategories).filter((category) => {
-    // Exclude calendar and other from categoryList, we handle those slightly differently below
-    return !(category in { other: null, calendar: null });
-  });
+  const categoryList: AppCategories[] = Object.values(AppCategories).filter(
+    (category) => {
+      // Exclude calendar and other from categoryList, we handle those slightly differently below
+      return !(category in { other: null, calendar: null });
+    }
+  );
 
   const [data, updateData] = useReducer(
-    (data: ModalState, partialData: Partial<ModalState>) => ({ ...data, ...partialData }),
+    (data: ModalState, partialData: Partial<ModalState>) => ({
+      ...data,
+      ...partialData,
+    }),
     {
       isOpen: false,
       credentialId: null,
@@ -205,13 +248,21 @@ export default function InstalledApps({ category, connectedCalendars, installedC
     updateData({ isOpen: false, credentialId: null });
   };
 
-  const handleDisconnect = (credentialId: number, app: string, teamId?: number) => {
+  const handleDisconnect = (
+    credentialId: number,
+    app: string,
+    teamId?: number
+  ) => {
     updateData({ isOpen: true, credentialId, teamId });
   };
 
   const deleteCredentialMutation = trpc.viewer.credentials.delete.useMutation();
 
-  const handleRemoveApp = ({ credentialId, teamId, callback }: RemoveAppParams) => {
+  const handleRemoveApp = ({
+    credentialId,
+    teamId,
+    callback,
+  }: RemoveAppParams) => {
     deleteCredentialMutation.mutate(
       { id: credentialId, teamId },
       {
@@ -231,9 +282,15 @@ export default function InstalledApps({ category, connectedCalendars, installedC
 
   return (
     <>
-      <InstalledAppsLayout heading={t("installed_apps")} subtitle={t("manage_your_connected_apps")}>
+      <InstalledAppsLayout
+        heading={t("installed_apps")}
+        subtitle={t("manage_your_connected_apps")}
+      >
         {categoryList.includes(category) && (
-          <IntegrationsContainer handleDisconnect={handleDisconnect} variant={category} />
+          <IntegrationsContainer
+            handleDisconnect={handleDisconnect}
+            variant={category}
+          />
         )}
         {category === "calendar" && (
           <CalendarListContainer

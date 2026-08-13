@@ -34,8 +34,10 @@ export function SaveFilterSegmentButton() {
     mutate: (_args: Record<string, unknown>) => {},
     mutateAsync: async (_args: Record<string, unknown>) => ({}),
   };
-  const createSegment = (args: Record<string, unknown>) => createSegmentMutation.mutate(args);
-  const updateSegment = (args: Record<string, unknown>) => updateSegmentMutation.mutate(args);
+  const createSegment = (args: Record<string, unknown>) =>
+    createSegmentMutation.mutate(args);
+  const updateSegment = (args: Record<string, unknown>) =>
+    updateSegmentMutation.mutate(args);
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const [isOpen, setIsOpen] = useState(false);
@@ -75,15 +77,28 @@ export function SaveFilterSegmentButton() {
     if (isOpen) {
       return;
     }
-    setSaveMode(selectedSegment && selectedSegment.type === "user" ? "update" : "create");
+    setSaveMode(
+      selectedSegment && selectedSegment.type === "user" ? "update" : "create"
+    );
   }, [selectedSegment, isOpen]);
 
-  const teams = null as { id: number; name: string; slug: string | null }[] | null;
+  const teams = null as
+    | { id: number; name: string; slug: string | null }[]
+    | null;
 
   const onSubmit = (values: FormValues) => {
     if (isTeamSegment && !selectedTeamId) {
       showToast(t("please_select_team"), "error");
       return;
+    }
+
+    if (typeof pendo !== "undefined") {
+      pendo.track("filter_segment_saved", {
+        segment_name: values.name,
+        save_mode: saveMode,
+        is_team_segment: isTeamSegment,
+        table_identifier: tableIdentifier,
+      });
     }
 
     const segmentData = {
@@ -96,7 +111,11 @@ export function SaveFilterSegmentButton() {
       searchTerm,
     };
 
-    if (saveMode === "update" && selectedSegment && selectedSegment.type === "user") {
+    if (
+      saveMode === "update" &&
+      selectedSegment &&
+      selectedSegment.type === "user"
+    ) {
       const scope = selectedSegment.scope;
       if (scope === "TEAM") {
         updateSegment({
@@ -137,7 +156,9 @@ export function SaveFilterSegmentButton() {
       // Reset form state when dialog closes
       setIsTeamSegment(false);
       setSelectedTeamId(undefined);
-      setSaveMode(selectedSegment && selectedSegment.type === "user" ? "update" : "create");
+      setSaveMode(
+        selectedSegment && selectedSegment.type === "user" ? "update" : "create"
+      );
       form.reset();
     }
     setIsOpen(open);
@@ -157,9 +178,12 @@ export function SaveFilterSegmentButton() {
         <Button
           StartIcon="bookmark"
           color="secondary"
-          onClick={() => posthog.capture("insights_routing_save_filter_clicked")}
+          onClick={() =>
+            posthog.capture("insights_routing_save_filter_clicked")
+          }
           disabled={!canSaveSegment}
-          data-testid="save-filter-segment-button">
+          data-testid="save-filter-segment-button"
+        >
           {t("save")}
         </Button>
       </DialogTrigger>
@@ -170,14 +194,21 @@ export function SaveFilterSegmentButton() {
             <div className="mb-4">
               <RadioGroup
                 defaultValue="update"
-                onValueChange={(value: string) => setSaveMode(value as "create" | "update")}
-                className="stack-y-2">
+                onValueChange={(value: string) =>
+                  setSaveMode(value as "create" | "update")
+                }
+                className="stack-y-2"
+              >
                 <RadioField
                   id="update_segment"
                   label={t("override_segment", { name: selectedSegment.name })}
                   value="update"
                 />
-                <RadioField id="create_segment" label={t("create_new_segment")} value="create" />
+                <RadioField
+                  id="create_segment"
+                  label={t("create_new_segment")}
+                  value="create"
+                />
               </RadioGroup>
             </div>
           ) : null}
@@ -186,7 +217,11 @@ export function SaveFilterSegmentButton() {
             {saveMode === "create" && (
               <div>
                 <Label>{t("name")}</Label>
-                <Input {...form.register("name")} data-testid="save-filter-segment-name" required />
+                <Input
+                  {...form.register("name")}
+                  data-testid="save-filter-segment-name"
+                  required
+                />
               </div>
             )}
 
@@ -209,7 +244,9 @@ export function SaveFilterSegmentButton() {
                         value: team.id.toString(),
                         label: team.name,
                       }))}
-                      onChange={(option) => setSelectedTeamId(parseInt(option?.value || "0"))}
+                      onChange={(option) =>
+                        setSelectedTeamId(parseInt(option?.value || "0"))
+                      }
                       placeholder={t("select_team")}
                       data-testid="save-filter-segment-team-select"
                       required
@@ -220,7 +257,11 @@ export function SaveFilterSegmentButton() {
             )}
 
             <DialogFooter>
-              <Button type="button" color="minimal" onClick={() => setIsOpen(false)}>
+              <Button
+                type="button"
+                color="minimal"
+                onClick={() => setIsOpen(false)}
+              >
                 {t("cancel")}
               </Button>
               <Button type="submit">{t("save")}</Button>

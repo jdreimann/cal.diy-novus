@@ -1,16 +1,19 @@
-import { revalidateAvailabilityList } from "app/(use-page-wrapper)/(main-nav)/availability/actions";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { HttpError } from "@calcom/lib/http-error";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
-import { DialogContent, DialogFooter, DialogTrigger, DialogClose } from "@calcom/ui/components/dialog";
-import { Form } from "@calcom/ui/components/form";
-import { InputField } from "@calcom/ui/components/form";
+import {
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTrigger,
+} from "@calcom/ui/components/dialog";
+import { Form, InputField } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
+import { revalidateAvailabilityList } from "app/(use-page-wrapper)/(main-nav)/availability/actions";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
 
 export function NewScheduleButton({
   name = "new-schedule",
@@ -30,8 +33,22 @@ export function NewScheduleButton({
 
   const createMutation = trpc.viewer.availability.schedule.create.useMutation({
     onSuccess: async ({ schedule }) => {
-      await router.push(`/availability/${schedule.id}${fromEventType ? "?fromEventType=true" : ""}`);
-      showToast(t("schedule_created_successfully", { scheduleName: schedule.name }), "success");
+      if (typeof pendo !== "undefined") {
+        pendo.track("schedule_created", {
+          schedule_id: schedule.id,
+          schedule_name: schedule.name,
+          from_event_type: !!fromEventType,
+        });
+      }
+      await router.push(
+        `/availability/${schedule.id}${
+          fromEventType ? "?fromEventType=true" : ""
+        }`
+      );
+      showToast(
+        t("schedule_created_successfully", { scheduleName: schedule.name }),
+        "success"
+      );
       revalidateAvailabilityList();
       utils.viewer.availability.list.setData(undefined, (data) => {
         const newSchedule = { ...schedule, isDefault: false, availability: [] };
@@ -52,7 +69,9 @@ export function NewScheduleButton({
       }
 
       if (err.data?.code === "UNAUTHORIZED") {
-        const message = `${err.data.code}: ${t("error_schedule_unauthorized_create")}`;
+        const message = `${err.data.code}: ${t(
+          "error_schedule_unauthorized_create"
+        )}`;
         showToast(message, "error");
       }
     },
@@ -70,7 +89,8 @@ export function NewScheduleButton({
           form={form}
           handleSubmit={(values) => {
             createMutation.mutate(values);
-          }}>
+          }}
+        >
           <InputField
             label={t("name")}
             type="text"

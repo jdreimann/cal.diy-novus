@@ -1,10 +1,5 @@
 "use client";
 
-import { revalidateAvailabilityList } from "app/(use-page-wrapper)/(main-nav)/availability/actions";
-import { revalidateSchedulePage } from "app/(use-page-wrapper)/availability/[schedule]/actions";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-
 import { AvailabilitySettings } from "@calcom/atoms/availability/AvailabilitySettings";
 import type { BulkUpdatParams } from "@calcom/features/eventtypes/components/BulkEditDefaultForEventsModal";
 import { withErrorFromUnknown } from "@calcom/lib/getClientErrorFromUnknown";
@@ -14,6 +9,10 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { showToast } from "@calcom/ui/components/toast";
+import { revalidateAvailabilityList } from "app/(use-page-wrapper)/(main-nav)/availability/actions";
+import { revalidateSchedulePage } from "app/(use-page-wrapper)/availability/[schedule]/actions";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 type PageProps = {
   scheduleData: RouterOutputs["viewer"]["availability"]["schedule"]["get"];
@@ -64,15 +63,28 @@ export const AvailabilitySettingsWebWrapper = ({
 
   const updateMutation = trpc.viewer.availability.schedule.update.useMutation({
     onSuccess: async ({ prevDefaultId, currentDefaultId, ...data }) => {
+      if (typeof pendo !== "undefined") {
+        pendo.track("schedule_updated", {
+          schedule_id: data.schedule.id,
+          schedule_name: data.schedule.name,
+          is_default_changed: prevDefaultId !== currentDefaultId,
+        });
+      }
       if (prevDefaultId && currentDefaultId) {
         // check weather the default schedule has been changed by comparing  previous default schedule id and current default schedule id.
         if (prevDefaultId !== currentDefaultId) {
           // if not equal, invalidate previous default schedule id and refetch previous default schedule id.
-          utils.viewer.availability.schedule.get.invalidate({ scheduleId: prevDefaultId });
-          utils.viewer.availability.schedule.get.refetch({ scheduleId: prevDefaultId });
+          utils.viewer.availability.schedule.get.invalidate({
+            scheduleId: prevDefaultId,
+          });
+          utils.viewer.availability.schedule.get.refetch({
+            scheduleId: prevDefaultId,
+          });
         }
       }
-      utils.viewer.availability.schedule.get.invalidate({ scheduleId: data.schedule.id });
+      utils.viewer.availability.schedule.get.invalidate({
+        scheduleId: data.schedule.id,
+      });
       revalidateSchedulePage(scheduleId);
       utils.viewer.availability.list.invalidate();
       revalidateAvailabilityList();
@@ -99,6 +111,11 @@ export const AvailabilitySettingsWebWrapper = ({
       utils.viewer.availability.list.invalidate();
     },
     onSuccess: () => {
+      if (typeof pendo !== "undefined") {
+        pendo.track("schedule_deleted", {
+          schedule_id: scheduleId,
+        });
+      }
       showToast(t("schedule_deleted_successfully"), "success");
       revalidateAvailabilityList();
       router.push("/availability");

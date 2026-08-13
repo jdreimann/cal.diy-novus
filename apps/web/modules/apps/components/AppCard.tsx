@@ -1,13 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import posthog from "posthog-js";
-
-import { InstallAppButton } from "@calcom/app-store/InstallAppButton";
 import { isRedirectApp } from "@calcom/app-store/_utils/redirectApps";
 import useAddAppMutation from "@calcom/app-store/_utils/useAddAppMutation";
-import { doesAppSupportTeamInstall, isConferencing } from "@calcom/app-store/utils";
+import { InstallAppButton } from "@calcom/app-store/InstallAppButton";
+import {
+  doesAppSupportTeamInstall,
+  isConferencing,
+} from "@calcom/app-store/utils";
 import type { UserAdminTeams } from "@calcom/features/users/repositories/UserRepository";
 import { AppOnboardingSteps } from "@calcom/lib/apps/appOnboardingSteps";
 import { getAppOnboardingUrl } from "@calcom/lib/apps/getAppOnboardingUrl";
@@ -18,9 +17,12 @@ import type { AppFrontendPayload as App } from "@calcom/types/App";
 import type { CredentialFrontendPayload as Credential } from "@calcom/types/Credential";
 import classNames from "@calcom/ui/classNames";
 import { Badge } from "@calcom/ui/components/badge";
-import { Button } from "@calcom/ui/components/button";
 import type { ButtonProps } from "@calcom/ui/components/button";
+import { Button } from "@calcom/ui/components/button";
 import { showToast } from "@calcom/ui/components/toast";
+import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
+import { useEffect, useState } from "react";
 
 interface AppCardProps {
   app: App;
@@ -29,10 +31,16 @@ interface AppCardProps {
   userAdminTeams?: UserAdminTeams;
 }
 
-export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCardProps) {
+export function AppCard({
+  app,
+  credentials,
+  searchText,
+  userAdminTeams,
+}: AppCardProps) {
   const { t } = useLocale();
   const router = useRouter();
-  const allowedMultipleInstalls = app.categories && app.categories.indexOf("calendar") > -1;
+  const allowedMultipleInstalls =
+    app.categories && app.categories.indexOf("calendar") > -1;
   const appAdded = (credentials && credentials.length) || 0;
   const enabledOnTeams = doesAppSupportTeamInstall({
     appCategories: app.categories,
@@ -40,22 +48,41 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
     isPaid: !!app.paid,
   });
 
-  const appInstalled = enabledOnTeams && userAdminTeams ? userAdminTeams.length < appAdded : appAdded > 0;
+  const appInstalled =
+    enabledOnTeams && userAdminTeams
+      ? userAdminTeams.length < appAdded
+      : appAdded > 0;
 
   const mutation = useAddAppMutation(null, {
     onSuccess: (data) => {
       if (data?.setupPending) return;
+      if (typeof pendo !== "undefined") {
+        pendo.track("app_installed", {
+          app_slug: app.slug,
+          app_type: app.type,
+          is_conferencing: isConferencing(app.categories || []),
+          is_redirect: isRedirectApp(app.slug),
+          has_setup_pending: false,
+        });
+      }
       showToast(t("app_successfully_installed"), "success");
     },
     onError: (error) => {
-      if (error instanceof Error) showToast(error.message || t("app_could_not_be_installed"), "error");
+      if (error instanceof Error)
+        showToast(error.message || t("app_could_not_be_installed"), "error");
     },
   });
 
-  const [searchTextIndex, setSearchTextIndex] = useState<number | undefined>(undefined);
+  const [searchTextIndex, setSearchTextIndex] = useState<number | undefined>(
+    undefined
+  );
 
   useEffect(() => {
-    setSearchTextIndex(searchText ? app.name.toLowerCase().indexOf(searchText.toLowerCase()) : undefined);
+    setSearchTextIndex(
+      searchText
+        ? app.name.toLowerCase().indexOf(searchText.toLowerCase())
+        : undefined
+    );
   }, [app.name, searchText]);
 
   const handleAppInstall = () => {
@@ -92,7 +119,12 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
     ) {
       mutation.mutate({ type: app.type });
     } else {
-      router.push(getAppOnboardingUrl({ slug: app.slug, step: AppOnboardingSteps.ACCOUNTS_STEP }));
+      router.push(
+        getAppOnboardingUrl({
+          slug: app.slug,
+          step: AppOnboardingSteps.ACCOUNTS_STEP,
+        })
+      );
     }
   };
 
@@ -114,7 +146,10 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
             <>
               {app.name.substring(0, searchTextIndex)}
               <span className="bg-yellow-300" data-testid="highlighted-text">
-                {app.name.substring(searchTextIndex, searchTextIndex + searchText.length)}
+                {app.name.substring(
+                  searchTextIndex,
+                  searchTextIndex + searchText.length
+                )}
               </span>
               {app.name.substring(searchTextIndex + searchText.length)}
             </>
@@ -139,7 +174,8 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
           onClick={() => {
             posthog.capture("app_card_details_clicked", { slug: app.slug });
           }}
-          data-testid={`app-store-app-card-${app.slug}`}>
+          data-testid={`app-store-app-card-${app.slug}`}
+        >
           {t("details")}
         </Button>
         {app.isGlobal ||
@@ -148,7 +184,10 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
           ? !app.isGlobal && (
               <InstallAppButton
                 type={app.type}
-                disableInstall={!!app.dependencies && !app.dependencyData?.some((data) => !data.installed)}
+                disableInstall={
+                  !!app.dependencies &&
+                  !app.dependencyData?.some((data) => !data.installed)
+                }
                 wrapperClassName="[@media(max-width:260px)]:w-full"
                 render={({ useDefaultComponent, ...props }) => {
                   if (useDefaultComponent) {
@@ -175,7 +214,11 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
                     };
                   }
                   return (
-                    <InstallAppButtonChild paid={app.paid} isRedirect={isRedirectApp(app.slug)} {...props} />
+                    <InstallAppButtonChild
+                      paid={app.paid}
+                      isRedirect={isRedirectApp(app.slug)}
+                      {...props}
+                    />
                   );
                 }}
               />
@@ -185,7 +228,10 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
               <InstallAppButton
                 type={app.type}
                 wrapperClassName="[@media(max-width:260px)]:w-full"
-                disableInstall={!!app.dependencies && app.dependencyData?.some((data) => !data.installed)}
+                disableInstall={
+                  !!app.dependencies &&
+                  app.dependencyData?.some((data) => !data.installed)
+                }
                 render={({ useDefaultComponent, ...props }) => {
                   if (useDefaultComponent) {
                     props = {
@@ -212,7 +258,11 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
                     };
                   }
                   return (
-                    <InstallAppButtonChild paid={app.paid} isRedirect={isRedirectApp(app.slug)} {...props} />
+                    <InstallAppButtonChild
+                      paid={app.paid}
+                      isRedirect={isRedirectApp(app.slug)}
+                      {...props}
+                    />
                   );
                 }}
               />
@@ -223,7 +273,9 @@ export function AppCard({ app, credentials, searchText, userAdminTeams }: AppCar
           <Badge variant="green">{t("installed", { count: appAdded })}</Badge>
         ) : null}
         {app.isTemplate && (
-          <span className="bg-error rounded-md px-2 py-1 text-sm font-normal text-red-800">Template</span>
+          <span className="bg-error rounded-md px-2 py-1 text-sm font-normal text-red-800">
+            Template
+          </span>
         )}
         {(app.isDefault || (!app.isDefault && app.isGlobal)) && (
           <span className="bg-subtle text-emphasis flex items-center rounded-md px-2 py-1 text-sm font-normal">
@@ -251,7 +303,8 @@ const InstallAppButtonChild = ({
         className="[@media(max-width:260px)]:w-full [@media(max-width:260px)]:justify-center"
         StartIcon="external-link"
         {...props}
-        size="base">
+        size="base"
+      >
         {t("visit")}
       </Button>
     );
@@ -265,7 +318,8 @@ const InstallAppButtonChild = ({
         className="[@media(max-width:260px)]:w-full [@media(max-width:260px)]:justify-center"
         StartIcon="plus"
         data-testid="install-app-button"
-        {...props}>
+        {...props}
+      >
         {paid.trial ? t("start_paid_trial") : t("subscribe")}
       </Button>
     );
@@ -278,7 +332,8 @@ const InstallAppButtonChild = ({
       StartIcon="plus"
       data-testid="install-app-button"
       {...props}
-      size="base">
+      size="base"
+    >
       {t("install")}
     </Button>
   );

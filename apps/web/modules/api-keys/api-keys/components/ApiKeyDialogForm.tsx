@@ -1,28 +1,30 @@
-import Link from "next/link";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-
 import dayjs from "@calcom/dayjs";
-import type { TApiKeys } from "~/api-keys/api-keys/components/ApiKeyListItem";
-import { API_NAME_LENGTH_MAX_LIMIT } from "@calcom/lib/constants";
-import { IS_CALCOM } from "@calcom/lib/constants";
+import { API_NAME_LENGTH_MAX_LIMIT, IS_CALCOM } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { DialogFooter } from "@calcom/ui/components/dialog";
-import { Form } from "@calcom/ui/components/form";
-import { TextField } from "@calcom/ui/components/form";
-import { SelectField } from "@calcom/ui/components/form";
-import { Switch } from "@calcom/ui/components/form";
+import {
+  Form,
+  SelectField,
+  Switch,
+  TextField,
+} from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { revalidateApiKeysList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/api-keys/actions";
+import Link from "next/link";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import type { TApiKeys } from "~/api-keys/api-keys/components/ApiKeyListItem";
 
 export default function ApiKeyDialogForm({
   defaultValues,
   handleClose,
 }: {
-  defaultValues?: Omit<TApiKeys, "userId" | "createdAt" | "lastUsedAt"> & { neverExpires?: boolean };
+  defaultValues?: Omit<TApiKeys, "userId" | "createdAt" | "lastUsedAt"> & {
+    neverExpires?: boolean;
+  };
   handleClose: () => void;
 }) {
   const { t } = useLocale();
@@ -44,7 +46,8 @@ export default function ApiKeyDialogForm({
   const [expiryDate, setExpiryDate] = useState<Date | null | undefined>(
     () => defaultValues?.expiresAt || dayjs().add(30, "day").toDate()
   );
-  const [successfulNewApiKeyModal, setSuccessfulNewApiKeyModal] = useState(false);
+  const [successfulNewApiKeyModal, setSuccessfulNewApiKeyModal] =
+    useState(false);
   const [apiKeyDetails, setApiKeyDetails] = useState({
     expiresAt: null as Date | null,
     note: "" as string | null,
@@ -64,7 +67,9 @@ export default function ApiKeyDialogForm({
       if (values.note && values.note.length > API_NAME_LENGTH_MAX_LIMIT) {
         errors.note = {
           type: "maxLength",
-          message: t("api_key_name_too_long", { max: API_NAME_LENGTH_MAX_LIMIT }),
+          message: t("api_key_name_too_long", {
+            max: API_NAME_LENGTH_MAX_LIMIT,
+          }),
         };
       }
       return { values, errors };
@@ -100,7 +105,9 @@ export default function ApiKeyDialogForm({
               {t("success_api_key_created")}
             </h2>
             <div className="text-emphasis text-sm">
-              <span className="font-semibold">{t("success_api_key_created_bold_tagline")}</span>{" "}
+              <span className="font-semibold">
+                {t("success_api_key_created_bold_tagline")}
+              </span>{" "}
               {t("you_will_only_view_it_once")}
             </div>
           </div>
@@ -118,7 +125,8 @@ export default function ApiKeyDialogForm({
                   }}
                   type="button"
                   className="rounded-l-none text-base"
-                  StartIcon="clipboard">
+                  StartIcon="clipboard"
+                >
                   {t("copy")}
                 </Button>
               </Tooltip>
@@ -126,11 +134,18 @@ export default function ApiKeyDialogForm({
             <span className="text-muted text-sm">
               {apiKeyDetails.neverExpires
                 ? t("never_expires")
-                : `${t("expires")} ${apiKeyDetails?.expiresAt?.toLocaleDateString()}`}
+                : `${t(
+                    "expires"
+                  )} ${apiKeyDetails?.expiresAt?.toLocaleDateString()}`}
             </span>
           </div>
           <DialogFooter showDivider className="relative">
-            <Button type="button" color="secondary" onClick={handleClose} tabIndex={-1}>
+            <Button
+              type="button"
+              color="secondary"
+              onClick={handleClose}
+              tabIndex={-1}
+            >
               {t("done")}
             </Button>
           </DialogFooter>
@@ -140,9 +155,20 @@ export default function ApiKeyDialogForm({
           form={form}
           handleSubmit={async (event) => {
             if (defaultValues) {
-              await updateApiKeyMutation.mutate({ id: defaultValues.id, note: event.note });
+              await updateApiKeyMutation.mutate({
+                id: defaultValues.id,
+                note: event.note,
+              });
             } else {
-              const apiKey = await utils.client.viewer.apiKeys.create.mutate(event);
+              const apiKey = await utils.client.viewer.apiKeys.create.mutate(
+                event
+              );
+              if (typeof pendo !== "undefined") {
+                pendo.track("api_key_created", {
+                  has_note: !!event.note,
+                  never_expires: !!event.neverExpires,
+                });
+              }
               setApiKey(apiKey);
               setApiKeyDetails({ ...event });
               await utils.viewer.apiKeys.list.invalidate();
@@ -150,7 +176,8 @@ export default function ApiKeyDialogForm({
               setSuccessfulNewApiKeyModal(true);
             }
           }}
-          className="stack-y-4">
+          className="stack-y-4"
+        >
           <div className="mb-4 mt-1">
             <h2 className="font-semi-bold font-cal text-emphasis text-xl tracking-wide">
               {defaultValues ? t("edit_api_key") : t("create_api_key")}
@@ -164,12 +191,15 @@ export default function ApiKeyDialogForm({
                   target="_blank"
                   rel="noopener noreferrer"
                   href="https://cal.com/integrate"
-                  className="border-subtle relative flex w-full items-start rounded-[10px] border p-4 text-sm">
+                  className="border-subtle relative flex w-full items-start rounded-[10px] border p-4 text-sm"
+                >
                   {t("api_key_modal_subtitle_platform")}
                 </Link>
               </div>
             ) : (
-              <p className="text-subtle mb-5 mt-1 text-sm">{t("api_key_modal_subtitle")}</p>
+              <p className="text-subtle mb-5 mt-1 text-sm">
+                {t("api_key_modal_subtitle")}
+              </p>
             )}
           </div>
 
@@ -194,7 +224,9 @@ export default function ApiKeyDialogForm({
           {!defaultValues && (
             <div className="flex flex-col">
               <div className="flex justify-between py-2">
-                <span className="text-default flex items-center text-sm font-medium">{t("expire_date")}</span>
+                <span className="text-default flex items-center text-sm font-medium">
+                  {t("expire_date")}
+                </span>
                 <Controller
                   name="neverExpires"
                   control={form.control}
@@ -243,14 +275,22 @@ export default function ApiKeyDialogForm({
               {!watchNeverExpires && (
                 <span className="text-subtle mt-2 text-xs">
                   {t("api_key_expires_on")}
-                  <span className="font-bold"> {dayjs(expiryDate).format("DD-MM-YYYY")}</span>
+                  <span className="font-bold">
+                    {" "}
+                    {dayjs(expiryDate).format("DD-MM-YYYY")}
+                  </span>
                 </span>
               )}
             </div>
           )}
 
           <DialogFooter showDivider className="relative">
-            <Button type="button" color="secondary" onClick={handleClose} tabIndex={-1}>
+            <Button
+              type="button"
+              color="secondary"
+              onClick={handleClose}
+              tabIndex={-1}
+            >
               {t("cancel")}
             </Button>
             <Button type="submit" loading={form.formState.isSubmitting}>

@@ -1,13 +1,5 @@
 "use client";
 
-import type { TFunction } from "i18next";
-import { signOut } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useTransition } from "react";
-import { Toaster } from "sonner";
-import { z } from "zod";
-import posthog from "posthog-js";
-
 import { APP_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useParamsWithFallback } from "@calcom/lib/hooks/useParamsWithFallback";
@@ -16,13 +8,19 @@ import classNames from "@calcom/ui/classNames";
 import { Button } from "@calcom/ui/components/button";
 import { StepCard } from "@calcom/ui/components/card";
 import { Steps } from "@calcom/ui/components/form";
-import { LoaderIcon } from "@coss/ui/icons";
-
 import { ConnectedCalendars } from "@components/getting-started/steps-views/ConnectCalendars";
 import { ConnectedVideoStep } from "@components/getting-started/steps-views/ConnectedVideoStep";
 import { SetupAvailability } from "@components/getting-started/steps-views/SetupAvailability";
 import UserProfile from "@components/getting-started/steps-views/UserProfile";
 import { UserSettings } from "@components/getting-started/steps-views/UserSettings";
+import { LoaderIcon } from "@coss/ui/icons";
+import type { TFunction } from "i18next";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import posthog from "posthog-js";
+import { Suspense, useTransition } from "react";
+import { Toaster } from "sonner";
+import { z } from "zod";
 
 const INITIAL_STEP = "user-settings";
 const BASE_STEPS = [
@@ -78,7 +76,13 @@ const getStepsAndHeadersForUser = (t: TFunction) => {
 const stepRouteSchema = z.object({
   step: z
     .array(
-      z.enum(["user-settings", "setup-availability", "user-profile", "connected-calendar", "connected-video"])
+      z.enum([
+        "user-settings",
+        "setup-availability",
+        "user-profile",
+        "connected-calendar",
+        "connected-video",
+      ])
     )
     .default([INITIAL_STEP]),
   from: z.string().optional(),
@@ -140,6 +144,14 @@ const OnboardingPage = (props: PageProps) => {
       from: from,
       was_skipped: wasSkipped,
     });
+    if (typeof pendo !== "undefined") {
+      pendo.track("onboarding_step_completed", {
+        step: currentStep,
+        step_index: currentStepIndex,
+        from: from,
+        was_skipped: wasSkipped,
+      });
+    }
     const nextIndex = currentStepIndex + 1;
     const newStep = steps[nextIndex];
     startTransition(() => {
@@ -157,7 +169,8 @@ const OnboardingPage = (props: PageProps) => {
         "[--cal-brand-accent:#FFFFFF] dark:[--cal-brand-accent:#000000]"
       )}
       data-testid="onboarding"
-      key={pathname}>
+      key={pathname}
+    >
       <div className="mx-auto py-6 sm:px-4 md:py-24">
         <div className="relative">
           <div className="sm:mx-auto sm:w-full sm:max-w-[600px]">
@@ -168,28 +181,49 @@ const OnboardingPage = (props: PageProps) => {
                 </p>
 
                 {headers[currentStepIndex]?.subtitle.map((subtitle, index) => (
-                  <p className="text-subtle font-sans text-sm font-normal" key={index}>
+                  <p
+                    className="text-subtle font-sans text-sm font-normal"
+                    key={index}
+                  >
                     {subtitle}
                   </p>
                 ))}
               </header>
-              <Steps maxSteps={steps.length} currentStep={currentStepIndex + 1} navigateToStep={goToStep} />
+              <Steps
+                maxSteps={steps.length}
+                currentStep={currentStepIndex + 1}
+                navigateToStep={goToStep}
+              />
             </div>
             <StepCard>
               <Suspense fallback={<LoaderIcon />}>
                 {currentStep === "user-settings" && (
-                  <UserSettings nextStep={goToNextStep} hideUsername={from === "signup"} user={user} />
+                  <UserSettings
+                    nextStep={goToNextStep}
+                    hideUsername={from === "signup"}
+                    user={user}
+                  />
                 )}
                 {currentStep === "connected-calendar" && (
-                  <ConnectedCalendars nextStep={goToNextStep} isPageLoading={isNextStepLoading} />
+                  <ConnectedCalendars
+                    nextStep={goToNextStep}
+                    isPageLoading={isNextStepLoading}
+                  />
                 )}
 
                 {currentStep === "connected-video" && (
-                  <ConnectedVideoStep nextStep={goToNextStep} isPageLoading={isNextStepLoading} user={user} />
+                  <ConnectedVideoStep
+                    nextStep={goToNextStep}
+                    isPageLoading={isNextStepLoading}
+                    user={user}
+                  />
                 )}
 
                 {currentStep === "setup-availability" && (
-                  <SetupAvailability nextStep={goToNextStep} defaultScheduleId={user.defaultScheduleId} />
+                  <SetupAvailability
+                    nextStep={goToNextStep}
+                    defaultScheduleId={user.defaultScheduleId}
+                  />
                 )}
                 {currentStep === "user-profile" && <UserProfile user={user} />}
               </Suspense>
@@ -204,7 +238,8 @@ const OnboardingPage = (props: PageProps) => {
                     event.preventDefault();
                     goToNextStep(true);
                   }}
-                  className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
+                  className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium"
+                >
                   {headers[currentStepIndex]?.skipText}
                 </Button>
               </div>
@@ -221,7 +256,8 @@ const OnboardingPage = (props: PageProps) => {
                 });
                 signOut({ callbackUrl: "/auth/logout" });
               }}
-              className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium">
+              className="mt-8 cursor-pointer px-4 py-2 font-sans text-sm font-medium"
+            >
               {t("sign_out")}
             </Button>
           </div>

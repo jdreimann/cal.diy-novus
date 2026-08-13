@@ -8,7 +8,11 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import classNames from "@calcom/ui/classNames";
 import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
-import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+import {
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+} from "@calcom/ui/components/dialog";
 import {
   Checkbox,
   DateRangePicker,
@@ -51,7 +55,12 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
     | {
         data?: {
           pages: {
-            members: { id: number; name: string | null; username: string | null; avatarUrl: string | null }[];
+            members: {
+              id: number;
+              name: string | null;
+              username: string | null;
+              avatarUrl: string | null;
+            }[];
           }[];
         };
         hasNextPage: boolean;
@@ -75,12 +84,21 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
     : oooForMembers?.data?.pages
         ?.flatMap(
           (page: {
-            members: { id: number; name: string | null; username: string | null; avatarUrl: string | null }[];
+            members: {
+              id: number;
+              name: string | null;
+              username: string | null;
+              avatarUrl: string | null;
+            }[];
           }) => page.members
         )
         ?.filter(
-          (member: { id: number; name: string | null; username: string | null; avatarUrl: string | null }) =>
-            me?.data?.id !== member.id
+          (member: {
+            id: number;
+            name: string | null;
+            username: string | null;
+            avatarUrl: string | null;
+          }) => me?.data?.id !== member.id
         )
         .map(
           (member: {
@@ -100,7 +118,12 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
     | {
         data?: {
           pages: {
-            members: { id: number; name: string | null; username: string | null; avatarUrl: string | null }[];
+            members: {
+              id: number;
+              name: string | null;
+              username: string | null;
+              avatarUrl: string | null;
+            }[];
           }[];
         };
         hasNextPage: boolean;
@@ -117,15 +140,29 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
     redirectMembers?.data?.pages
       ?.flatMap(
         (page: {
-          members: { id: number; name: string | null; username: string | null; avatarUrl: string | null }[];
+          members: {
+            id: number;
+            name: string | null;
+            username: string | null;
+            avatarUrl: string | null;
+          }[];
         }) => page.members
       )
       ?.filter(
-        (member: { id: number; name: string | null; username: string | null; avatarUrl: string | null }) =>
-          me?.data?.id !== member.id
+        (member: {
+          id: number;
+          name: string | null;
+          username: string | null;
+          avatarUrl: string | null;
+        }) => me?.data?.id !== member.id
       )
       .map(
-        (member: { id: number; name: string | null; username: string | null; avatarUrl: string | null }) => ({
+        (member: {
+          id: number;
+          name: string | null;
+          username: string | null;
+          avatarUrl: string | null;
+        }) => ({
           value: member.id,
           label: member.name || member.username || "",
           avatarUrl: member.avatarUrl,
@@ -135,11 +172,15 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
   const { data: outOfOfficeReasonList, isPending: isReasonListPending } =
     trpc.viewer.ooo.outOfOfficeReasonList.useQuery();
   const reasonList = (outOfOfficeReasonList || []).map((reason) => ({
-    label: `${reason.emoji} ${reason.userId === null ? t(reason.reason) : reason.reason}`,
+    label: `${reason.emoji} ${
+      reason.userId === null ? t(reason.reason) : reason.reason
+    }`,
     value: reason.id,
   }));
 
-  const [profileRedirect, setProfileRedirect] = useState(!!currentlyEditingOutOfOfficeEntry?.toTeamUserId);
+  const [profileRedirect, setProfileRedirect] = useState(
+    !!currentlyEditingOutOfOfficeEntry?.toTeamUserId
+  );
 
   const hasTeamPlan = false;
 
@@ -175,11 +216,16 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
   const hasValidNotes = Boolean(watchedNotes?.trim());
 
   // Fetch user's holiday settings to show warning if OOO dates overlap with holidays
-  const { data: holidaySettings } = trpc.viewer.holidays.getUserSettings.useQuery({});
+  const { data: holidaySettings } =
+    trpc.viewer.holidays.getUserSettings.useQuery({});
 
   // Check if selected dates overlap with any enabled holidays
   const overlappingHolidays = useMemo(() => {
-    if (!holidaySettings?.countryCode || !watchedDateRange?.startDate || !watchedDateRange?.endDate) {
+    if (
+      !holidaySettings?.countryCode ||
+      !watchedDateRange?.startDate ||
+      !watchedDateRange?.endDate
+    ) {
       return [];
     }
 
@@ -192,21 +238,27 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
       .map((h) => ({ date: h.date, holiday: { id: h.id, name: h.name } }));
   }, [holidaySettings, watchedDateRange]);
 
-  const createOrEditOutOfOfficeEntry = trpc.viewer.ooo.outOfOfficeCreateOrUpdate.useMutation({
-    onSuccess: () => {
-      showToast(
-        currentlyEditingOutOfOfficeEntry
-          ? t("success_edited_entry_out_of_office")
-          : t("success_entry_created"),
-        "success"
-      );
-      utils.viewer.ooo.outOfOfficeEntriesList.invalidate();
-      closeModal();
-    },
-    onError: (error) => {
-      showToast(t(error.message), "error");
-    },
-  });
+  const createOrEditOutOfOfficeEntry =
+    trpc.viewer.ooo.outOfOfficeCreateOrUpdate.useMutation({
+      onSuccess: () => {
+        if (typeof pendo !== "undefined") {
+          pendo.track("out_of_office_created", {
+            is_edit: !!currentlyEditingOutOfOfficeEntry,
+          });
+        }
+        showToast(
+          currentlyEditingOutOfOfficeEntry
+            ? t("success_edited_entry_out_of_office")
+            : t("success_entry_created"),
+          "success"
+        );
+        utils.viewer.ooo.outOfOfficeEntriesList.invalidate();
+        closeModal();
+      },
+      onError: (error) => {
+        showToast(t(error.message), "error");
+      },
+    });
 
   return (
     <Dialog
@@ -215,12 +267,14 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
         if (!open) {
           closeModal();
         }
-      }}>
+      }}
+    >
       <DialogContent
         enableOverflow
         onOpenAutoFocus={(event) => {
           event.preventDefault();
-        }}>
+        }}
+      >
         <form
           id="create-or-edit-ooo-form"
           onSubmit={handleSubmit((data) => {
@@ -229,20 +283,26 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
             } else {
               createOrEditOutOfOfficeEntry.mutate({
                 ...data,
-                startDateOffset: -1 * data.dateRange.startDate.getTimezoneOffset(),
+                startDateOffset:
+                  -1 * data.dateRange.startDate.getTimezoneOffset(),
                 endDateOffset: -1 * data.dateRange.endDate.getTimezoneOffset(),
               });
             }
-          })}>
+          })}
+        >
           <div className="h-full px-1">
             <DialogHeader
               title={
-                currentlyEditingOutOfOfficeEntry ? t("edit_an_out_of_office") : t("create_an_out_of_office")
+                currentlyEditingOutOfOfficeEntry
+                  ? t("edit_an_out_of_office")
+                  : t("create_an_out_of_office")
               }
             />
 
             <div>
-              <p className="text-emphasis mb-1 block text-sm font-medium capitalize">{t("dates")}</p>
+              <p className="text-emphasis mb-1 block text-sm font-medium capitalize">
+                {t("dates")}
+              </p>
               <div>
                 <Controller
                   name="dateRange"
@@ -250,7 +310,10 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                   render={({ field: { onChange, value } }) => (
                     <DateRangePicker
                       minDate={null}
-                      dates={{ startDate: value.startDate, endDate: value.endDate }}
+                      dates={{
+                        startDate: value.startDate,
+                        endDate: value.endDate,
+                      }}
                       onDatesChange={(values) => {
                         onChange(values);
                       }}
@@ -271,7 +334,9 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                     overlappingHolidays.length === 1
                       ? t("holiday_overlap_message_single", {
                           holiday: overlappingHolidays[0].holiday.name,
-                          date: dayjs(overlappingHolidays[0].date).format("D MMM"),
+                          date: dayjs(overlappingHolidays[0].date).format(
+                            "D MMM"
+                          ),
                         })
                       : t("holiday_overlap_message_multiple", {
                           count: overlappingHolidays.length,
@@ -288,7 +353,9 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
             {/* Reason Select */}
             <div className="mt-4 w-full">
               <div className="">
-                <p className="text-emphasis block text-sm font-medium">{t("reason")}</p>
+                <p className="text-emphasis block text-sm font-medium">
+                  {t("reason")}
+                </p>
                 <Controller
                   control={control}
                   name="reasonId"
@@ -298,7 +365,9 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                       name="reason"
                       data-testid="reason_select"
                       menuPlacement="bottom"
-                      value={reasonList.find((reason) => reason.value === value)}
+                      value={reasonList.find(
+                        (reason) => reason.value === value
+                      )}
                       placeholder={t("ooo_select_reason")}
                       options={reasonList}
                       onChange={(selectedOption) => {
@@ -344,8 +413,11 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                       htmlFor="show-note-publicly"
                       className={classNames(
                         "ml-2 text-sm",
-                        hasValidNotes ? "text-emphasis cursor-pointer" : "text-muted cursor-not-allowed"
-                      )}>
+                        hasValidNotes
+                          ? "text-emphasis cursor-pointer"
+                          : "text-muted cursor-not-allowed"
+                      )}
+                    >
                       {t("show_note_publicly_description")}
                     </label>
                   </div>
@@ -366,14 +438,22 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                       setValue("toTeamUserId", null);
                     }
                   }}
-                  label={hasTeamPlan ? t("redirect_team_enabled") : t("redirect_team_disabled")}
+                  label={
+                    hasTeamPlan
+                      ? t("redirect_team_enabled")
+                      : t("redirect_team_disabled")
+                  }
                 />
-                {!hasTeamPlan && <div className="mx-2" data-testid="upgrade-team-badge"></div>}
+                {!hasTeamPlan && (
+                  <div className="mx-2" data-testid="upgrade-team-badge"></div>
+                )}
               </div>
 
               {profileRedirect && (
                 <div className="mb-2">
-                  <Label className="text-emphasis mt-6">{t("select_team_member")}</Label>
+                  <Label className="text-emphasis mt-6">
+                    {t("select_team_member")}
+                  </Label>
                   <Controller
                     control={control}
                     name="toTeamUserId"
@@ -383,20 +463,27 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                         data-testid="team_username_select"
                         isSearchable={true}
                         value={redirectToMemberListOptions
-                          .filter((member) => member.value !== getValues("forUserId"))
+                          .filter(
+                            (member) => member.value !== getValues("forUserId")
+                          )
                           .find((member) => member.value === value)}
                         placeholder={t("search")}
                         options={redirectToMemberListOptions.filter(
                           (member) => member.value !== getValues("forUserId")
                         )}
-                        onInputChange={(newValue) => setSearchRedirectMember(newValue)}
+                        onInputChange={(newValue) =>
+                          setSearchRedirectMember(newValue)
+                        }
                         onChange={(selectedOption) => {
                           if (selectedOption?.value) {
                             onChange(selectedOption.value);
                           }
                         }}
                         onMenuScrollToBottom={() => {
-                          if (redirectMembers?.hasNextPage && !redirectMembers?.isFetchingNextPage) {
+                          if (
+                            redirectMembers?.hasNextPage &&
+                            !redirectMembers?.isFetchingNextPage
+                          ) {
                             redirectMembers?.fetchNextPage();
                           }
                         }}
@@ -416,7 +503,8 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                 onClick={() => {
                   closeModal();
                 }}
-                className="mr-1">
+                className="mr-1"
+              >
                 {t("cancel")}
               </Button>
               <Button
@@ -424,7 +512,8 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                 color="primary"
                 type="submit"
                 disabled={isSubmitting || isReasonListPending}
-                data-testid="create-or-edit-entry-ooo-redirect">
+                data-testid="create-or-edit-entry-ooo-redirect"
+              >
                 {currentlyEditingOutOfOfficeEntry ? t("save") : t("create")}
               </Button>
             </div>

@@ -6,7 +6,11 @@ import { trpc } from "@calcom/trpc/react";
 import { Alert } from "@calcom/ui/components/alert";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
-import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+import {
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+} from "@calcom/ui/components/dialog";
 import { Label, Select, TextArea } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
@@ -99,7 +103,9 @@ function RoutingInfoSection(props: RoutingInfoSectionProps): JSX.Element {
   return (
     <div className="-mt-2 mb-4 space-y-3">
       <div>
-        <Label className="text-emphasis mb-1 block text-sm font-medium">{routingReasonLabel}</Label>
+        <Label className="text-emphasis mb-1 block text-sm font-medium">
+          {routingReasonLabel}
+        </Label>
         <div className="text-default bg-muted flex items-center gap-2 rounded-md px-3 py-2 text-sm">
           {routingReasonEnum && (
             <Badge variant="gray" className="shrink-0">
@@ -111,18 +117,28 @@ function RoutingInfoSection(props: RoutingInfoSectionProps): JSX.Element {
       </div>
 
       <div>
-        <Label className="text-emphasis mb-1 block text-sm font-medium">{whoBookedItLabel}</Label>
+        <Label className="text-emphasis mb-1 block text-sm font-medium">
+          {whoBookedItLabel}
+        </Label>
         <div className="text-default bg-muted flex items-center justify-between rounded-md px-3 py-2 text-sm">
           <span>{guestEmail}</span>
-          <button type="button" className="text-subtle hover:text-emphasis ml-2" onClick={handleCopyClick}>
+          <button
+            type="button"
+            className="text-subtle hover:text-emphasis ml-2"
+            onClick={handleCopyClick}
+          >
             <Icon name={copyIconName} className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       <div>
-        <Label className="text-emphasis mb-1 block text-sm font-medium">{whoReceivedItLabel}</Label>
-        <p className="text-default bg-muted rounded-md px-3 py-2 text-sm">{hostDisplay}</p>
+        <Label className="text-emphasis mb-1 block text-sm font-medium">
+          {whoReceivedItLabel}
+        </Label>
+        <p className="text-default bg-muted rounded-md px-3 py-2 text-sm">
+          {hostDisplay}
+        </p>
       </div>
     </div>
   );
@@ -146,8 +162,16 @@ interface AdditionalNotesSectionProps {
   errorMessage: string | undefined;
 }
 
-function AdditionalNotesSection(props: AdditionalNotesSectionProps): JSX.Element {
-  const { control, additionalNotesLabel, placeholder, fieldRequiredText, errorMessage } = props;
+function AdditionalNotesSection(
+  props: AdditionalNotesSectionProps
+): JSX.Element {
+  const {
+    control,
+    additionalNotesLabel,
+    placeholder,
+    fieldRequiredText,
+    errorMessage,
+  } = props;
 
   const renderTextArea = ({
     field,
@@ -157,7 +181,10 @@ function AdditionalNotesSection(props: AdditionalNotesSectionProps): JSX.Element
 
   return (
     <div className="mb-4">
-      <Label htmlFor="additionalNotes" className="text-emphasis mb-2 block text-sm font-medium">
+      <Label
+        htmlFor="additionalNotes"
+        className="text-emphasis mb-2 block text-sm font-medium"
+      >
         {additionalNotesLabel} <span className="text-error">*</span>
       </Label>
       <Controller
@@ -166,7 +193,9 @@ function AdditionalNotesSection(props: AdditionalNotesSectionProps): JSX.Element
         rules={{ required: fieldRequiredText }}
         render={renderTextArea}
       />
-      {errorMessage && <p className="text-error mt-1 text-sm">{errorMessage}</p>}
+      {errorMessage && (
+        <p className="text-error mt-1 text-sm">{errorMessage}</p>
+      )}
     </div>
   );
 }
@@ -197,7 +226,9 @@ function AssigneeSection(props: AssigneeSectionProps): JSX.Element {
         options={teamMemberOptions}
         placeholder={selectTeamMemberPlaceholder}
         onChange={handleChange}
-        value={teamMemberOptions.find((opt) => opt.value === field.value) || null}
+        value={
+          teamMemberOptions.find((opt) => opt.value === field.value) || null
+        }
         isClearable
       />
     );
@@ -218,15 +249,31 @@ function AssigneeSection(props: AssigneeSectionProps): JSX.Element {
 
   let assigneeField: JSX.Element;
   if (showTeamSelector) {
-    assigneeField = <Controller name="correctAssignee" control={control} render={renderTeamSelect} />;
+    assigneeField = (
+      <Controller
+        name="correctAssignee"
+        control={control}
+        render={renderTeamSelect}
+      />
+    );
   } else {
-    assigneeField = <Controller name="correctAssignee" control={control} render={renderEmailInput} />;
+    assigneeField = (
+      <Controller
+        name="correctAssignee"
+        control={control}
+        render={renderEmailInput}
+      />
+    );
   }
 
   return (
     <div className="mb-4">
-      <Label htmlFor="correctAssignee" className="text-emphasis mb-2 block text-sm font-medium">
-        {whoShouldHaveReceivedItLabel} <span className="text-subtle font-normal">({optionalLabel})</span>
+      <Label
+        htmlFor="correctAssignee"
+        className="text-emphasis mb-2 block text-sm font-medium"
+      >
+        {whoShouldHaveReceivedItLabel}{" "}
+        <span className="text-subtle font-normal">({optionalLabel})</span>
       </Label>
       {assigneeField}
     </div>
@@ -234,7 +281,9 @@ function AssigneeSection(props: AssigneeSectionProps): JSX.Element {
 }
 
 // biome-ignore lint/complexity/noExcessiveLinesPerFunction: Dialog component with hooks and state management - already split into 3 sub-components
-export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Element {
+export function WrongAssignmentDialog(
+  props: IWrongAssignmentDialog
+): JSX.Element {
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const { copyToClipboard, isCopied } = useCopy();
@@ -242,8 +291,10 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
 
   const bookingUid = booking.uid;
   const teamId = booking.eventType?.team?.id ?? null;
-  const routingReason = booking.assignmentReasonSortedByCreatedAt[0]?.reasonString ?? null;
-  const routingReasonEnum = booking.assignmentReasonSortedByCreatedAt[0]?.reasonEnum ?? null;
+  const routingReason =
+    booking.assignmentReasonSortedByCreatedAt[0]?.reasonString ?? null;
+  const routingReasonEnum =
+    booking.assignmentReasonSortedByCreatedAt[0]?.reasonEnum ?? null;
   const guestEmail = booking.attendees[0]?.email ?? "";
   const hostEmail = booking.user?.email ?? "";
   const hostName = booking.user?.name ?? null;
@@ -260,22 +311,35 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
   });
 
   const { data: existingReport, isPending: isCheckingReport } =
-    trpc.viewer.bookings.hasWrongAssignmentReport.useQuery({ bookingUid }, { enabled: isOpenDialog });
+    trpc.viewer.bookings.hasWrongAssignmentReport.useQuery(
+      { bookingUid },
+      { enabled: isOpenDialog }
+    );
   const alreadyReported = existingReport?.hasReport ?? false;
 
   const teamIdForQuery = teamId ?? 0;
-  const teamMembersData = undefined as { members: Array<{ name: string | null; email: string }> } | undefined;
+  const teamMembersData = undefined as
+    | { members: Array<{ name: string | null; email: string }> }
+    | undefined;
 
   const teamMemberOptions: TeamMemberOption[] =
-    teamMembersData?.members.map((member: { name: string | null; email: string }) => ({
-      label: member.name || member.email,
-      value: member.email,
-      email: member.email,
-    })) ?? [];
+    teamMembersData?.members.map(
+      (member: { name: string | null; email: string }) => ({
+        label: member.name || member.email,
+        value: member.email,
+        email: member.email,
+      })
+    ) ?? [];
 
-  const { mutate: reportWrongAssignment, isPending } = trpc.viewer.bookings.reportWrongAssignment.useMutation(
-    {
+  const { mutate: reportWrongAssignment, isPending } =
+    trpc.viewer.bookings.reportWrongAssignment.useMutation({
       async onSuccess(): Promise<void> {
+        if (typeof pendo !== "undefined") {
+          pendo.track("wrong_assignment_reported", {
+            booking_uid: bookingUid,
+            team_id: teamId,
+          });
+        }
         showToast(t("wrong_assignment_reported"), "success");
         setIsOpenDialog(false);
         await utils.viewer.bookings.invalidate();
@@ -283,8 +347,7 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
       onError(error: { message?: string }): void {
         showToast(error.message || t("unexpected_error_try_again"), "error");
       },
-    }
-  );
+    });
 
   const onSubmit = (data: FormValues): void => {
     reportWrongAssignment({
@@ -339,22 +402,36 @@ export function WrongAssignmentDialog(props: IWrongAssignmentDialog): JSX.Elemen
               />
 
               {alreadyReported && (
-                <Alert severity="warning" message={t("wrong_assignment_already_reported")} className="mb-4" />
+                <Alert
+                  severity="warning"
+                  message={t("wrong_assignment_already_reported")}
+                  className="mb-4"
+                />
               )}
 
-              <Alert severity="info" title={t("did_you_know")} message={t("wrong_assignment_crm_info")} />
+              <Alert
+                severity="info"
+                title={t("did_you_know")}
+                message={t("wrong_assignment_crm_info")}
+              />
             </div>
           </div>
 
           <DialogFooter showDivider className="mt-8">
-            <Button type="button" color="secondary" onClick={handleCloseClick} disabled={isPending}>
+            <Button
+              type="button"
+              color="secondary"
+              onClick={handleCloseClick}
+              disabled={isPending}
+            >
               {t("close")}
             </Button>
             <Button
               type="submit"
               color="primary"
               disabled={isPending || alreadyReported || isCheckingReport}
-              loading={isPending || isCheckingReport}>
+              loading={isPending || isCheckingReport}
+            >
               {t("submit")}
             </Button>
           </DialogFooter>

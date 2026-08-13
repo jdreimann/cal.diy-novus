@@ -12,7 +12,10 @@ import { storeDecoyBooking } from "@calcom/features/bookings/lib/client/decoyBoo
 import { createBooking } from "@calcom/features/bookings/lib/create-booking";
 import { createRecurringBooking } from "@calcom/features/bookings/lib/create-recurring-booking";
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
-import type { BookerEvent, BookingResponse } from "@calcom/features/bookings/types";
+import type {
+  BookerEvent,
+  BookingResponse,
+} from "@calcom/features/bookings/types";
 import { getFullName } from "@calcom/features/form-builder/utils";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -41,7 +44,12 @@ export interface IUseBookings {
         > & {
           subsetOfUsers: Pick<
             BookerEvent["subsetOfUsers"][number],
-            "name" | "username" | "avatarUrl" | "weekStart" | "profile" | "bookerUrl"
+            | "name"
+            | "username"
+            | "avatarUrl"
+            | "weekStart"
+            | "profile"
+            | "bookerUrl"
           >[];
         })
       | null;
@@ -92,11 +100,14 @@ const getBookingSuccessfulEventPayload = (booking: {
   };
 };
 
-const getRescheduleBookingSuccessfulEventPayload = getBookingSuccessfulEventPayload;
+const getRescheduleBookingSuccessfulEventPayload =
+  getBookingSuccessfulEventPayload;
 
-export const getDryRunBookingSuccessfulEventPayload = getBaseBookingEventPayload;
+export const getDryRunBookingSuccessfulEventPayload =
+  getBaseBookingEventPayload;
 
-export const getDryRunRescheduleBookingSuccessfulEventPayload = getDryRunBookingSuccessfulEventPayload;
+export const getDryRunRescheduleBookingSuccessfulEventPayload =
+  getDryRunBookingSuccessfulEventPayload;
 export interface IUseBookingLoadingStates {
   creatingBooking: boolean;
   creatingRecurringBooking: boolean;
@@ -108,7 +119,13 @@ export interface IUseBookingErrors {
 }
 export type UseBookingsReturnType = ReturnType<typeof useBookings>;
 
-export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookingDryRun }: IUseBookings) => {
+export const useBookings = ({
+  event,
+  hashedLink,
+  bookingForm,
+  metadata,
+  isBookingDryRun,
+}: IUseBookings) => {
   const router = useRouter();
   const eventSlug = useBookerStoreContext((state) => state.eventSlug);
   const eventTypeId = useBookerStoreContext((state) => state.eventId);
@@ -159,7 +176,10 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
         return;
       }
 
-      if ("isShortCircuitedBooking" in booking && booking.isShortCircuitedBooking) {
+      if (
+        "isShortCircuitedBooking" in booking &&
+        booking.isShortCircuitedBooking
+      ) {
         if (!booking.uid) {
           console.error("Decoy booking missing uid");
           return;
@@ -190,8 +210,8 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
       const validDuration = event.data?.isDynamic
         ? duration || event.data?.length
         : duration && event.data?.metadata?.multipleDuration?.includes(duration)
-          ? duration
-          : event.data?.length;
+        ? duration
+        : event.data?.length;
 
       if (isRescheduling) {
         sdkActionManager?.fire("rescheduleBookingSuccessful", {
@@ -201,10 +221,14 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
           duration: validDuration,
           organizer: {
             name: users?.[0]?.name || "Nameless",
-            email: booking?.userPrimaryEmail || booking.user?.email || "Email-less",
+            email:
+              booking?.userPrimaryEmail || booking.user?.email || "Email-less",
             timeZone: booking.user?.timeZone || "Europe/London",
           },
-          confirmed: !(booking.status === BookingStatus.PENDING && event.data?.requiresConfirmation),
+          confirmed: !(
+            booking.status === BookingStatus.PENDING &&
+            event.data?.requiresConfirmation
+          ),
         });
         sdkActionManager?.fire(
           "rescheduleBookingSuccessfulV2",
@@ -221,10 +245,14 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
           duration: validDuration,
           organizer: {
             name: users?.[0]?.name || "Nameless",
-            email: booking?.userPrimaryEmail || booking.user?.email || "Email-less",
+            email:
+              booking?.userPrimaryEmail || booking.user?.email || "Email-less",
             timeZone: booking.user?.timeZone || "Europe/London",
           },
-          confirmed: !(booking.status === BookingStatus.PENDING && event.data?.requiresConfirmation),
+          confirmed: !(
+            booking.status === BookingStatus.PENDING &&
+            event.data?.requiresConfirmation
+          ),
         });
 
         sdkActionManager?.fire(
@@ -234,6 +262,18 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
             isRecurring: false,
           })
         );
+      }
+
+      if (typeof pendo !== "undefined") {
+        pendo.track("booking_created", {
+          event_type_id: booking.eventTypeId,
+          event_type_slug: eventSlug,
+          is_reschedule: isRescheduling,
+          requires_confirmation: booking.status === BookingStatus.PENDING,
+          has_payment: !!booking.paymentUid,
+          is_recurring: false,
+          scheduling_type: event.data?.schedulingType,
+        });
       }
 
       if (paymentUid) {
@@ -258,9 +298,14 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
         isSuccessBookingPage: true,
         email: bookingForm.getValues("responses.email"),
         eventTypeSlug: eventSlug,
-        seatReferenceUid: "seatReferenceUid" in booking ? (booking.seatReferenceUid as string) : null,
+        seatReferenceUid:
+          "seatReferenceUid" in booking
+            ? (booking.seatReferenceUid as string)
+            : null,
         formerTime:
-          isRescheduling && bookingData?.startTime ? dayjs(bookingData.startTime).toString() : undefined,
+          isRescheduling && bookingData?.startTime
+            ? dayjs(bookingData.startTime).toString()
+            : undefined,
         rescheduledBy, // ensure further reschedules performed on the success page are recorded correctly
       };
 
@@ -291,11 +336,19 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
       }
 
       const error = err as Error & {
-        data: { rescheduleUid: string; startTime: string; attendees: string[]; seatUid?: string };
+        data: {
+          rescheduleUid: string;
+          startTime: string;
+          attendees: string[];
+          seatUid?: string;
+        };
         traceId?: string;
       };
 
-      if (error.message === ErrorCode.BookerLimitExceededReschedule && error.data?.rescheduleUid) {
+      if (
+        error.message === ErrorCode.BookerLimitExceededReschedule &&
+        error.data?.rescheduleUid
+      ) {
         setRescheduleUid(error.data?.seatUid ?? error.data?.rescheduleUid);
         setBookingData({
           uid: error.data?.rescheduleUid,
@@ -353,7 +406,9 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
         email: bookingForm.getValues("responses.email"),
         eventTypeSlug: eventSlug,
         formerTime:
-          isRescheduling && bookingData?.startTime ? dayjs(bookingData.startTime).toString() : undefined,
+          isRescheduling && bookingData?.startTime
+            ? dayjs(bookingData.startTime).toString()
+            : undefined,
       };
 
       if (isRescheduling) {
@@ -381,6 +436,16 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
         });
       }
 
+      if (typeof pendo !== "undefined") {
+        pendo.track("recurring_booking_created", {
+          event_type_id: booking.eventTypeId,
+          bookings_count: bookings.length,
+          is_reschedule: isRescheduling,
+          requires_confirmation: booking.status === BookingStatus.PENDING,
+          has_payment: !!booking.paymentUid,
+        });
+      }
+
       bookingSuccessRedirect({
         successRedirectUrl: event?.data?.successRedirectUrl || "",
         query,
@@ -405,7 +470,8 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
     onError: (err, _, ctx) => {
       console.error("Error creating recurring booking", err);
       // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- It is only called when user takes an action in embed
-      bookerFormErrorRef && bookerFormErrorRef.current?.scrollIntoView({ behavior: "smooth" });
+      bookerFormErrorRef &&
+        bookerFormErrorRef.current?.scrollIntoView({ behavior: "smooth" });
     },
   });
 
@@ -420,15 +486,20 @@ export const useBookings = ({ event, hashedLink, bookingForm, metadata, isBookin
   });
 
   const errors = {
-    hasDataErrors: Boolean(createBookingMutation.isError || createRecurringBookingMutation.isError),
-    dataErrors: createBookingMutation.error || createRecurringBookingMutation.error,
+    hasDataErrors: Boolean(
+      createBookingMutation.isError || createRecurringBookingMutation.isError
+    ),
+    dataErrors:
+      createBookingMutation.error || createRecurringBookingMutation.error,
   };
 
   // A redirect is triggered on mutation success, so keep the loading state while it is happening.
   const loadingStates = {
-    creatingBooking: createBookingMutation.isPending || createBookingMutation.isSuccess,
+    creatingBooking:
+      createBookingMutation.isPending || createBookingMutation.isSuccess,
     creatingRecurringBooking:
-      createRecurringBookingMutation.isPending || createRecurringBookingMutation.isSuccess,
+      createRecurringBookingMutation.isPending ||
+      createRecurringBookingMutation.isSuccess,
   };
 
   return {

@@ -15,6 +15,9 @@ export default function UsersAddView() {
 
   const mutation = trpc.viewer.users.add.useMutation({
     onSuccess: async () => {
+      if (typeof pendo !== "undefined") {
+        pendo.track("user_added");
+      }
       showToast(t("user_added_successfully"), "success");
       await utils.viewer.users.list.invalidate();
       if (pathname !== null) {

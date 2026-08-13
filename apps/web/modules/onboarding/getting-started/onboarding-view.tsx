@@ -23,7 +23,8 @@ type OnboardingViewProps = {
 export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
   const router = useRouter();
   const { t } = useLocale();
-  const { selectedPlan, setSelectedPlan, resetOnboardingPreservingPlan } = useOnboardingStore();
+  const { selectedPlan, setSelectedPlan, resetOnboardingPreservingPlan } =
+    useOnboardingStore();
   const previousPlanRef = useRef<PlanType | null>(null);
   const [isPending, startTransition] = useTransition();
   const hasTeamMembership = false;
@@ -73,6 +74,11 @@ export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
       posthog.capture("onboarding_plan_continue_clicked", {
         plan_type: selectedPlan,
       });
+      if (typeof pendo !== "undefined") {
+        pendo.track("onboarding_plan_continue_clicked", {
+          plan_type: selectedPlan,
+        });
+      }
     }
     startTransition(() => {
       if (selectedPlan === "organization") {
@@ -152,11 +158,13 @@ export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
                 color="primary"
                 className="rounded-[10px]"
                 onClick={handleContinue}
-                disabled={isPending}>
+                disabled={isPending}
+              >
                 {isPending ? t("loading") : t("continue")}
               </Button>
             </div>
-          }>
+          }
+        >
           {/* Card */}
           <div className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-xl border border-muted bg-cal-muted p-1">
             <div className="flex w-full flex-col items-start overflow-clip rounded-inherit">
@@ -169,8 +177,14 @@ export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
                   posthog.capture("onboarding_plan_selected", {
                     plan_type: planType,
                   });
+                  if (typeof pendo !== "undefined") {
+                    pendo.track("onboarding_plan_selected", {
+                      plan_type: planType,
+                    });
+                  }
                 }}
-                className="flex w-full flex-col gap-1 rounded-[10px]">
+                className="flex w-full flex-col gap-1 rounded-[10px]"
+              >
                 {plans.map((plan) => {
                   const isSelected = selectedPlan === plan.id;
 
@@ -180,24 +194,38 @@ export const OnboardingView = ({ userEmail }: OnboardingViewProps) => {
                       value={plan.id}
                       className={classNames(
                         "relative flex items-center overflow-hidden rounded-[10px] border bg-default transition",
-                        isSelected ? "border-emphasis shadow-sm" : "border-subtle",
+                        isSelected
+                          ? "border-emphasis shadow-sm"
+                          : "border-subtle",
                         "pr-12 [&>button]:right-6 [&>button]:left-auto [&>button]:mt-0 [&>button]:transform"
                       )}
                       classNames={{
                         container: "flex w-full items-center gap-3 p-5 pr-12",
-                      }}>
+                      }}
+                    >
                       <div className="flex w-full flex-col gap-1">
                         <div className="flex flex-wrap items-center gap-1">
-                          <p className="font-semibold text-emphasis text-sm leading-4">{plan.title}</p>
+                          <p className="font-semibold text-emphasis text-sm leading-4">
+                            {plan.title}
+                          </p>
                           <Badge
                             variant="gray"
                             size="md"
-                            className="hidden h-4 rounded-md px-1 py-1 md:flex md:items-center">
-                            <span className="font-medium text-emphasis text-xs leading-3">{plan.badge}</span>
+                            className="hidden h-4 rounded-md px-1 py-1 md:flex md:items-center"
+                          >
+                            <span className="font-medium text-emphasis text-xs leading-3">
+                              {plan.badge}
+                            </span>
                           </Badge>
                         </div>
-                        <Badge variant="gray" size="md" className="h-4 w-fit rounded-md px-1 py-1 md:hidden">
-                          <span className="font-medium text-emphasis text-xs leading-3">{plan.badge}</span>
+                        <Badge
+                          variant="gray"
+                          size="md"
+                          className="h-4 w-fit rounded-md px-1 py-1 md:hidden"
+                        >
+                          <span className="font-medium text-emphasis text-xs leading-3">
+                            {plan.badge}
+                          </span>
                         </Badge>
                         <p className="max-w-full font-medium text-sm text-subtle leading-[1.25]">
                           {plan.description}

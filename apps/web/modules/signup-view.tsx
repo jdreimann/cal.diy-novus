@@ -1,5 +1,6 @@
 "use client";
 
+import process from "node:process";
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
 import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
 import {
@@ -33,7 +34,13 @@ import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 import classNames from "@calcom/ui/classNames";
 import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
-import { CheckboxField, Form, PasswordField, SelectField, TextField } from "@calcom/ui/components/form";
+import {
+  CheckboxField,
+  Form,
+  PasswordField,
+  SelectField,
+  TextField,
+} from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
 import { InfoIcon, ShieldCheckIcon, StarIcon } from "@coss/ui/icons";
@@ -57,9 +64,12 @@ const signupSchema = apiSignupSchema.extend({
   cfToken: z.string().optional(),
 });
 
-const TurnstileCaptcha = dynamic(() => import("@calcom/web/modules/auth/components/Turnstile"), {
-  ssr: false,
-});
+const TurnstileCaptcha = dynamic(
+  () => import("@calcom/web/modules/auth/components/Turnstile"),
+  {
+    ssr: false,
+  }
+);
 
 type FormValues = z.infer<typeof signupSchema>;
 
@@ -166,7 +176,10 @@ function UsernameField({
                 <p>{t("already_in_use_error")}</p>
               </div>
             ) : premium ? (
-              <div data-testid="premium-username-warning" className="flex items-center">
+              <div
+                data-testid="premium-username-warning"
+                className="flex items-center"
+              >
                 <StarIcon className="mr-1 inline-block h-4 w-4" />
                 <p>
                   {t("premium_username", {
@@ -237,7 +250,8 @@ export default function Signup({
   const loadingSubmitState = isSubmitSuccessful || isSubmitting;
   const displayBackButton = token ? false : displayEmailForm;
 
-  const isPlatformUser = redirectUrl?.includes("platform") && redirectUrl?.includes("new");
+  const isPlatformUser =
+    redirectUrl?.includes("platform") && redirectUrl?.includes("new");
 
   const signUp: SubmitHandler<FormValues> = async (_data) => {
     const { cfToken, ...data } = _data;
@@ -249,6 +263,15 @@ export default function Signup({
       is_premium_username: premiumUsername,
       username_taken: usernameTaken,
     });
+    if (typeof pendo !== "undefined") {
+      pendo.track("signup_form_submitted", {
+        has_token: !!token,
+        is_org_invite: isOrgInviteByLink,
+        org_slug: orgSlug,
+        is_premium_username: premiumUsername,
+        username_taken: usernameTaken,
+      });
+    }
 
     try {
       const result = await fetchSignup(
@@ -265,7 +288,9 @@ export default function Signup({
           showToast(t("account_already_exists_please_login"), "warning");
           const callbackUrl = token ? `/teams?token=${token}` : "/event-types";
           setTimeout(() => {
-            router.push(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+            router.push(
+              `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+            );
           }, 3000);
           return;
         }
@@ -290,18 +315,30 @@ export default function Signup({
       }
 
       if (process.env.NEXT_PUBLIC_GTM_ID) {
-        pushGTMEvent("create_account", { email: data.email, user: data.username, lang: data.language });
+        pushGTMEvent("create_account", {
+          email: data.email,
+          user: data.username,
+          lang: data.language,
+        });
       }
 
-      const gettingStartedPath = onboardingV3Enabled ? "onboarding/getting-started" : "getting-started";
-      const verifyOrGettingStarted = emailVerificationEnabled ? "auth/verify-email" : gettingStartedPath;
+      const gettingStartedPath = onboardingV3Enabled
+        ? "onboarding/getting-started"
+        : "getting-started";
+      const verifyOrGettingStarted = emailVerificationEnabled
+        ? "auth/verify-email"
+        : gettingStartedPath;
       const gettingStartedWithPlatform = "settings/platform/new";
 
       const constructCallBackIfUrlPresent = () => {
         if (isOrgInviteByLink) {
           return `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`;
         }
-        return addOrUpdateQueryParam(`${WEBAPP_URL}/${searchParams.get("callbackUrl")}`, "from", "signup");
+        return addOrUpdateQueryParam(
+          `${WEBAPP_URL}/${searchParams.get("callbackUrl")}`,
+          "from",
+          "signup"
+        );
       };
 
       const constructCallBackIfUrlNotPresent = () => {
@@ -313,7 +350,9 @@ export default function Signup({
 
       const constructCallBackUrl = () => {
         const callbackUrlSearchParams = searchParams?.get("callbackUrl");
-        return callbackUrlSearchParams ? constructCallBackIfUrlPresent() : constructCallBackIfUrlNotPresent();
+        return callbackUrlSearchParams
+          ? constructCallBackIfUrlPresent()
+          : constructCallBackIfUrlNotPresent();
       };
 
       await signIn<"credentials">("credentials", {
@@ -324,7 +363,8 @@ export default function Signup({
       setTurnstileKey((k) => k + 1);
       formMethods.setValue("cfToken", undefined);
 
-      const errorMessage = err instanceof Error ? err.message : t("unexpected_error_try_again");
+      const errorMessage =
+        err instanceof Error ? err.message : t("unexpected_error_try_again");
 
       if (errorMessage === INVALID_CLOUDFLARE_TOKEN_ERROR) {
         return;
@@ -337,6 +377,15 @@ export default function Signup({
         is_premium_username: premiumUsername,
         error_message: errorMessage,
       });
+      if (typeof pendo !== "undefined") {
+        pendo.track("signup_form_submit_error", {
+          has_token: !!token,
+          is_org_invite: isOrgInviteByLink,
+          org_slug: orgSlug,
+          is_premium_username: premiumUsername,
+          error_message: errorMessage,
+        });
+      }
       formMethods.setError("apiError", { message: errorMessage });
     }
   };
@@ -372,7 +421,9 @@ export default function Signup({
           <DubAnalytics
             apiHost="/_proxy/dub"
             cookieOptions={{
-              domain: isENVDev ? undefined : `.${new URL(WEBSITE_URL).hostname}`,
+              domain: isENVDev
+                ? undefined
+                : `.${new URL(WEBSITE_URL).hostname}`,
             }}
             domainsConfig={{
               refer: "refer.cal.com",
@@ -386,18 +437,22 @@ export default function Signup({
           "[--cal-brand-subtle:#9CA3AF]",
           "[--cal-brand-text:#FFFFFF] dark:[--cal-brand-text:#000000]",
           "[--cal-brand-emphasis:#101010] dark:[--cal-brand-emphasis:#e1e1e1]"
-        )}>
+        )}
+      >
         <div className="grid w-full max-w-[1440px] grid-cols-1 grid-rows-1 overflow-hidden bg-cal-muted lg:grid-cols-2 2xl:rounded-[20px] 2xl:border 2xl:border-subtle 2xl:py-6">
           {/* Left side */}
           <div className="mt-0 mr-auto ml-auto flex w-full max-w-xl flex-col px-4 pt-6 sm:px-16 md:px-20 lg:mt-24 2xl:px-28">
             {accountUnderReview ? (
               <div
                 className="flex flex-col items-center gap-4 py-10 text-center"
-                data-testid="account-under-review">
+                data-testid="account-under-review"
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-subtle">
                   <ShieldCheckIcon className="h-6 w-6 text-default" />
                 </div>
-                <h1 className="font-cal text-[28px] leading-none">{t("account_under_review_title")}</h1>
+                <h1 className="font-cal text-[28px] leading-none">
+                  {t("account_under_review_title")}
+                </h1>
                 <p className="font-medium text-base text-subtle leading-5">
                   {t("account_under_review_description")}
                 </p>
@@ -416,14 +471,17 @@ export default function Signup({
                       data-testid="signup-back-button"
                       onClick={() => {
                         setDisplayEmailForm(false);
-                      }}>
+                      }}
+                    >
                       {t("back")}
                     </Button>
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
                   <h1 className="font-cal text-[28px] leading-none">
-                    {IS_CALCOM ? t("create_your_calcom_account") : t("create_your_account")}
+                    {IS_CALCOM
+                      ? t("create_your_calcom_account")
+                      : t("create_your_account")}
                   </h1>
                   {IS_CALCOM ? (
                     <p className="font-medium text-base text-subtle leading-5">
@@ -446,7 +504,9 @@ export default function Signup({
                             WEBAPP_URL.includes("cal.eu") ||
                               (typeof window !== "undefined" &&
                                 window.location.hostname === "localhost" &&
-                                new URL(window.location.href).searchParams.get("region") === "eu")
+                                new URL(window.location.href).searchParams.get(
+                                  "region"
+                                ) === "eu")
                               ? "european_union"
                               : "united_states"
                           ),
@@ -455,7 +515,9 @@ export default function Signup({
                             WEBAPP_URL.includes("cal.eu") ||
                             (typeof window !== "undefined" &&
                               window.location.hostname === "localhost" &&
-                              new URL(window.location.href).searchParams.get("region") === "eu")
+                              new URL(window.location.href).searchParams.get(
+                                "region"
+                              ) === "eu")
                               ? "eu"
                               : "us",
                         }}
@@ -469,16 +531,25 @@ export default function Signup({
 
                             // Handle localhost - add region as URL parameter
                             if (currentUrl.hostname === "localhost") {
-                              currentUrl.searchParams.set("region", option.value);
+                              currentUrl.searchParams.set(
+                                "region",
+                                option.value
+                              );
                               window.location.href = currentUrl.toString();
                               return;
                             }
 
                             // Handle production domains - modify hostname only to preserve query params
                             if (option.value === "eu") {
-                              currentUrl.hostname = currentUrl.hostname.replace("cal.com", "cal.eu");
+                              currentUrl.hostname = currentUrl.hostname.replace(
+                                "cal.com",
+                                "cal.eu"
+                              );
                             } else {
-                              currentUrl.hostname = currentUrl.hostname.replace("cal.eu", "cal.com");
+                              currentUrl.hostname = currentUrl.hostname.replace(
+                                "cal.eu",
+                                "cal.com"
+                              );
                             }
                             window.location.href = currentUrl.toString();
                           }
@@ -496,14 +567,21 @@ export default function Signup({
                       form={formMethods}
                       handleSubmit={async (values) => {
                         let updatedValues = values;
-                        if (!formMethods.getValues().username && isOrgInviteByLink) {
+                        if (
+                          !formMethods.getValues().username &&
+                          isOrgInviteByLink
+                        ) {
                           updatedValues = {
                             ...values,
-                            username: getOrgUsernameFromEmail(values.email, orgAutoAcceptEmail),
+                            username: getOrgUsernameFromEmail(
+                              values.email,
+                              orgAutoAcceptEmail
+                            ),
                           };
                         }
                         await signUp(updatedValues);
-                      }}>
+                      }}
+                    >
                       {/* Username */}
                       {!isOrgInviteByLink ? (
                         <UsernameField
@@ -525,7 +603,10 @@ export default function Signup({
                                   )}/`
                                 )
                               : truncateDomain(
-                                  `${WEBSITE_URL.replace(URL_PROTOCOL_REGEX, "")}/`
+                                  `${WEBSITE_URL.replace(
+                                    URL_PROTOCOL_REGEX,
+                                    ""
+                                  )}/`
                                 )
                           }
                         />
@@ -570,7 +651,9 @@ export default function Signup({
 
                       <CheckboxField
                         data-testid="signup-cookie-content-checkbox"
-                        onChange={() => handleConsentChange(userConsentToCookie)}
+                        onChange={() =>
+                          handleConsentChange(userConsentToCookie)
+                        }
                         description={t("cookie_consent_checkbox")}
                       />
                       {errors.apiError && (
@@ -591,12 +674,17 @@ export default function Signup({
                           !!formMethods.formState.errors.email ||
                           !formMethods.getValues("email") ||
                           !formMethods.getValues("password") ||
-                          (CLOUDFLARE_SITE_ID && !process.env.NEXT_PUBLIC_IS_E2E && !watch("cfToken")) ||
+                          (CLOUDFLARE_SITE_ID &&
+                            !process.env.NEXT_PUBLIC_IS_E2E &&
+                            !watch("cfToken")) ||
                           isSubmitting ||
                           usernameTaken
-                        }>
+                        }
+                      >
                         {premiumUsername && !usernameTaken
-                          ? `${t("get_started")} (${getPremiumPlanPriceValue()})`
+                          ? `${t(
+                              "get_started"
+                            )} (${getPremiumPlanPriceValue()})`
                           : t("get_started")}
                       </Button>
                     </Form>
@@ -624,33 +712,55 @@ export default function Signup({
                               />
                             </>
                           }
-                          className={classNames("w-full justify-center rounded-md text-center")}
+                          className={classNames(
+                            "w-full justify-center rounded-md text-center"
+                          )}
                           data-testid="continue-with-google-button"
                           onClick={async () => {
                             posthog.capture("signup_google_button_clicked", {
                               has_token: !!token,
                               is_org_invite: isOrgInviteByLink,
                               org_slug: orgSlug,
-                              has_prepopulated_username: !!prepopulateFormValues?.username,
+                              has_prepopulated_username:
+                                !!prepopulateFormValues?.username,
                             });
+                            if (typeof pendo !== "undefined") {
+                              pendo.track("signup_google_button_clicked", {
+                                has_token: !!token,
+                                is_org_invite: isOrgInviteByLink,
+                                org_slug: orgSlug,
+                                has_prepopulated_username:
+                                  !!prepopulateFormValues?.username,
+                              });
+                            }
                             setIsGoogleLoading(true);
                             const baseUrl = process.env.NEXT_PUBLIC_WEBAPP_URL;
                             const GOOGLE_AUTH_URL = `${baseUrl}/auth/sso/google`;
                             const searchQueryParams = new URLSearchParams();
                             if (prepopulateFormValues?.username) {
                               // If username is present we save it in query params to check for premium
-                              searchQueryParams.set("username", prepopulateFormValues.username);
-                              localStorage.setItem("username", prepopulateFormValues.username);
+                              searchQueryParams.set(
+                                "username",
+                                prepopulateFormValues.username
+                              );
+                              localStorage.setItem(
+                                "username",
+                                prepopulateFormValues.username
+                              );
                             }
                             if (token && prepopulateFormValues?.email) {
-                              searchQueryParams.set("email", prepopulateFormValues.email);
+                              searchQueryParams.set(
+                                "email",
+                                prepopulateFormValues.email
+                              );
                             }
                             const url = searchQueryParams.toString()
                               ? `${GOOGLE_AUTH_URL}?${searchQueryParams.toString()}`
                               : GOOGLE_AUTH_URL;
 
                             router.push(url);
-                          }}>
+                          }}
+                        >
                           {t("continue_with_google")}
                         </Button>
                       </div>
@@ -675,33 +785,55 @@ export default function Signup({
                               />
                             </>
                           }
-                          className={classNames("w-full justify-center rounded-md text-center")}
+                          className={classNames(
+                            "w-full justify-center rounded-md text-center"
+                          )}
                           data-testid="continue-with-microsoft-button"
                           onClick={async () => {
                             posthog.capture("signup_microsoft_button_clicked", {
                               has_token: !!token,
                               is_org_invite: isOrgInviteByLink,
                               org_slug: orgSlug,
-                              has_prepopulated_username: !!prepopulateFormValues?.username,
+                              has_prepopulated_username:
+                                !!prepopulateFormValues?.username,
                             });
+                            if (typeof pendo !== "undefined") {
+                              pendo.track("signup_microsoft_button_clicked", {
+                                has_token: !!token,
+                                is_org_invite: isOrgInviteByLink,
+                                org_slug: orgSlug,
+                                has_prepopulated_username:
+                                  !!prepopulateFormValues?.username,
+                              });
+                            }
                             setIsMicrosoftLoading(true);
                             const baseUrl = process.env.NEXT_PUBLIC_WEBAPP_URL;
                             const MICROSOFT_AUTH_URL = `${baseUrl}/auth/sso/microsoft`;
                             const searchQueryParams = new URLSearchParams();
                             if (prepopulateFormValues?.username) {
                               // If username is present we save it in query params to check for premium
-                              searchQueryParams.set("username", prepopulateFormValues.username);
-                              localStorage.setItem("username", prepopulateFormValues.username);
+                              searchQueryParams.set(
+                                "username",
+                                prepopulateFormValues.username
+                              );
+                              localStorage.setItem(
+                                "username",
+                                prepopulateFormValues.username
+                              );
                             }
                             if (token && prepopulateFormValues?.email) {
-                              searchQueryParams.set("email", prepopulateFormValues.email);
+                              searchQueryParams.set(
+                                "email",
+                                prepopulateFormValues.email
+                              );
                             }
                             const url = searchQueryParams.toString()
                               ? `${MICROSOFT_AUTH_URL}?${searchQueryParams.toString()}`
                               : MICROSOFT_AUTH_URL;
 
                             router.push(url);
-                          }}>
+                          }}
+                        >
                           {t("continue_with_microsoft")}
                         </Button>
                       </div>
@@ -724,16 +856,26 @@ export default function Signup({
                       <Button
                         color="secondary"
                         disabled={isGoogleLoading || isMicrosoftLoading}
-                        className={classNames("w-full justify-center rounded-md text-center")}
+                        className={classNames(
+                          "w-full justify-center rounded-md text-center"
+                        )}
                         onClick={() => {
                           posthog.capture("signup_email_button_clicked", {
                             has_token: !!token,
                             is_org_invite: isOrgInviteByLink,
                             org_slug: orgSlug,
                           });
+                          if (typeof pendo !== "undefined") {
+                            pendo.track("signup_email_button_clicked", {
+                              has_token: !!token,
+                              is_org_invite: isOrgInviteByLink,
+                              org_slug: orgSlug,
+                            });
+                          }
                           setDisplayEmailForm(true);
                         }}
-                        data-testid="continue-with-email-button">
+                        data-testid="continue-with-email-button"
+                      >
                         {t("continue_with_email")}
                       </Button>
                     </div>
@@ -745,7 +887,10 @@ export default function Signup({
                   <div className="flex flex-col text-sm">
                     <div className="flex gap-1">
                       <p className="text-subtle">{t("already_have_account")}</p>
-                      <Link href="/auth/login" className="text-emphasis hover:underline">
+                      <Link
+                        href="/auth/login"
+                        className="text-emphasis hover:underline"
+                      >
                         {t("sign_in")}
                       </Link>
                     </div>
@@ -759,14 +904,16 @@ export default function Signup({
                             className="text-emphasis hover:underline"
                             key="terms"
                             href={`${WEBSITE_TERMS_URL}`}
-                            target="_blank">
+                            target="_blank"
+                          >
                             Terms
                           </Link>,
                           <Link
                             className="text-emphasis hover:underline"
                             key="privacy"
                             href={`${WEBSITE_PRIVACY_POLICY_URL}`}
-                            target="_blank">
+                            target="_blank"
+                          >
                             Privacy Policy.
                           </Link>,
                         ]}
@@ -835,7 +982,11 @@ export default function Signup({
               </>
             )}
             <div className="hidden rounded-tl-2xl rounded-br-none rounded-bl-2xl border border-default border-r-0 border-dashed bg-black/3 lg:block lg:py-[6px] lg:pl-[6px] dark:bg-white/5">
-              <img className="block dark:hidden" src="/mock-event-type-list.svg" alt="Cal.diy Booking Page" />
+              <img
+                className="block dark:hidden"
+                src="/mock-event-type-list.svg"
+                alt="Cal.diy Booking Page"
+              />
               {/* eslint-disable @next/next/no-img-element */}
               <img
                 className="hidden dark:block"
@@ -845,10 +996,15 @@ export default function Signup({
             </div>
             <div className="mt-8 mr-12 hidden h-full w-full grid-cols-3 gap-4 overflow-hidden lg:grid">
               {FEATURES.map((feature, index) => (
-                <div key={index} className="mb-8 flex max-w-52 flex-col leading-none sm:mb-0">
+                <div
+                  key={index}
+                  className="mb-8 flex max-w-52 flex-col leading-none sm:mb-0"
+                >
                   <div className="items-center text-emphasis">
                     <Icon name={feature.icon} className="mb-1 h-4 w-4" />
-                    <span className="font-medium text-sm">{t(feature.title)}</span>
+                    <span className="font-medium text-sm">
+                      {t(feature.title)}
+                    </span>
                   </div>
                   <div className="text-sm text-subtle">
                     <p>

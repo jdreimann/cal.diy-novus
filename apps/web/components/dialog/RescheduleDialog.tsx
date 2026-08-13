@@ -1,14 +1,17 @@
-import type { Dispatch, SetStateAction } from "react";
-import { useState } from "react";
-
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
-import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+import {
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+} from "@calcom/ui/components/dialog";
 import { TextArea } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { ClockIcon } from "@coss/ui/icons";
+import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 
 interface IRescheduleDialog {
   isOpenDialog: boolean;
@@ -22,17 +25,24 @@ export const RescheduleDialog = (props: IRescheduleDialog) => {
   const { isOpenDialog, setIsOpenDialog, bookingUid } = props;
   const [rescheduleReason, setRescheduleReason] = useState("");
 
-  const { mutate: rescheduleApi, isPending } = trpc.viewer.bookings.requestReschedule.useMutation({
-    async onSuccess() {
-      showToast(t("reschedule_request_sent"), "success");
-      setIsOpenDialog(false);
-      await utils.viewer.bookings.invalidate();
-    },
-    onError() {
-      showToast(t("unexpected_error_try_again"), "error");
-      // @TODO: notify sentry
-    },
-  });
+  const { mutate: rescheduleApi, isPending } =
+    trpc.viewer.bookings.requestReschedule.useMutation({
+      async onSuccess() {
+        if (typeof pendo !== "undefined") {
+          pendo.track("reschedule_request_sent", {
+            booking_uid: bookingUid,
+            has_reschedule_reason: !!rescheduleReason,
+          });
+        }
+        showToast(t("reschedule_request_sent"), "success");
+        setIsOpenDialog(false);
+        await utils.viewer.bookings.invalidate();
+      },
+      onError() {
+        showToast(t("unexpected_error_try_again"), "error");
+        // @TODO: notify sentry
+      },
+    });
 
   return (
     <Dialog open={isOpenDialog} onOpenChange={setIsOpenDialog}>
@@ -43,7 +53,9 @@ export const RescheduleDialog = (props: IRescheduleDialog) => {
           </div>
           <div className="w-full md:pt-1">
             <DialogHeader title={t("send_reschedule_request")} />
-            <p className="text-subtle text-sm">{t("reschedule_modal_description")}</p>
+            <p className="text-subtle text-sm">
+              {t("reschedule_modal_description")}
+            </p>
             <p className="text-emphasis mb-2 mt-6 text-sm font-bold">
               {t("reason_for_reschedule_request")}
               <span className="text-subtle font-normal"> (Optional)</span>
@@ -69,7 +81,8 @@ export const RescheduleDialog = (props: IRescheduleDialog) => {
                 bookingUid,
                 rescheduleReason,
               });
-            }}>
+            }}
+          >
             {t("send_reschedule_request")}
           </Button>
         </DialogFooter>
